@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AgendaSemanal from '@/components/agenda/AgendaSemanal'
 import { startOfWeek, endOfWeek } from 'date-fns'
+import type { Turno } from '@/types/database'
 
 export const metadata = { title: 'Agenda — ConsultorioApp' }
 
@@ -33,7 +34,7 @@ export default async function AgendaPage() {
 
   return (
     <AgendaSemanal
-      turnosIniciales={turnos ?? []}
+      turnosIniciales={(turnos ?? []) as unknown as Turno[]}
       pacientes={pacientes ?? []}
       terapeutaId={user.id}
     />

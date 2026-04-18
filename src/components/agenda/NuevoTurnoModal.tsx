@@ -77,7 +77,7 @@ export default function NuevoTurnoModal({
       return
     }
 
-    onCreado(data as Turno)
+    onCreado(data as unknown as Turno)
   }
 
   const pacientesActivos = pacientes.filter((p) => p.activo)

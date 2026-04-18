@@ -65,7 +65,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
       .gte('fecha_hora', inicioSemana.toISOString())
       .lte('fecha_hora', finSemana.toISOString())
       .order('fecha_hora')
-    if (data) setTurnos(data as Turno[])
+    if (data) setTurnos(data as unknown as Turno[])
   }, [terapeutaId, inicioSemana, finSemana])
 
   async function cambiarEstado(turnoId: string, nuevoEstado: EstadoTurno) {
