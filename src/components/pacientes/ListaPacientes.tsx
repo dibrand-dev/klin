@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { formatNombreCompleto } from '@/lib/utils'
 import type { Paciente } from '@/types/database'
 
+
 interface ListaPacientesProps {
   pacientes: Paciente[]
 }
@@ -67,7 +68,7 @@ function PacienteCard({ paciente }: { paciente: Paciente }) {
   const iniciales = `${paciente.nombre[0] ?? ''}${paciente.apellido[0] ?? ''}`.toUpperCase()
 
   return (
-    <div className="card p-4 hover:shadow-md transition-shadow">
+    <Link href={`/pacientes/${paciente.id}`} className="card p-4 hover:shadow-md transition-shadow block">
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
           <span className="text-sm font-semibold text-primary-700">{iniciales}</span>
@@ -108,6 +109,6 @@ function PacienteCard({ paciente }: { paciente: Paciente }) {
           )}
         </div>
       )}
-    </div>
+    </Link>
   )
 }
