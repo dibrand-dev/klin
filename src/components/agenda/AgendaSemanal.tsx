@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   startOfWeek, endOfWeek, eachDayOfInterval,
   addWeeks, subWeeks, addDays, subDays,
@@ -36,11 +37,19 @@ function getHeight(min: number) {
 }
 
 export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId }: AgendaSemanalProps) {
+  const router = useRouter()
   const [semanaActual, setSemanaActual] = useState(new Date())
   const [diaActual, setDiaActual] = useState(new Date())
   const [turnos, setTurnos] = useState<Turno[]>(turnosIniciales)
   const [modalNuevo, setModalNuevo] = useState<{ fecha: Date } | null>(null)
   const [turnoSeleccionado, setTurnoSeleccionado] = useState<Turno | null>(null)
+
+  // Mobile: navega a la página de nuevo turno con la fecha/hora preseleccionada
+  function abrirNuevoTurnoMobile(fecha: Date) {
+    const fechaStr = format(fecha, 'yyyy-MM-dd')
+    const horaStr = format(fecha, 'HH:mm')
+    router.push(`/turnos/nuevo?fecha=${fechaStr}&hora=${horaStr}`)
+  }
 
   const inicioSemana = startOfWeek(semanaActual, { weekStartsOn: 1 })
   const finSemana = endOfWeek(semanaActual, { weekStartsOn: 1 })
@@ -103,7 +112,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
   const turnosDia = getTurnosDelDia(diaActual)
 
   // ─── Columna de turnos reutilizable ──────────────────────────
-  function ColumnaHoras({ dia }: { dia: Date }) {
+  function ColumnaHoras({ dia, onCeldaClick }: { dia: Date; onCeldaClick: (f: Date) => void }) {
     const lista = getTurnosDelDia(dia)
     return (
       <div className="flex-1 relative">
@@ -114,7 +123,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
             onClick={() => {
               const f = new Date(dia)
               f.setHours(hora, 0, 0, 0)
-              setModalNuevo({ fecha: f })
+              onCeldaClick(f)
             }}
           />
         ))}
@@ -188,7 +197,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
           </button>
 
           <button
-            onClick={() => setModalNuevo({ fecha: diaActual })}
+            onClick={() => abrirNuevoTurnoMobile(diaActual)}
             className="btn-primary flex items-center gap-1 px-3 py-2 text-sm"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -230,7 +239,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
                 </div>
               ))}
             </div>
-            <ColumnaHoras dia={diaActual} />
+            <ColumnaHoras dia={diaActual} onCeldaClick={abrirNuevoTurnoMobile} />
           </div>
         </div>
       </div>
@@ -311,7 +320,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
                       {format(dia, 'd')}
                     </span>
                   </div>
-                  <ColumnaHoras dia={dia} />
+                  <ColumnaHoras dia={dia} onCeldaClick={(f) => setModalNuevo({ fecha: f })} />
                 </div>
               )
             })}

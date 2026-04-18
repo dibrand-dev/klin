@@ -1,0 +1,40 @@
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import NuevoTurnoPageForm from '@/components/agenda/NuevoTurnoPageForm'
+import { Suspense } from 'react'
+
+export const metadata = { title: 'Nuevo turno — ConsultorioApp' }
+
+export default async function NuevoTurnoPage() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: pacientes } = await supabase
+    .from('pacientes')
+    .select('*')
+    .eq('terapeuta_id', user.id)
+    .eq('activo', true)
+    .order('apellido')
+
+  return (
+    <div className="p-4 max-w-lg mx-auto">
+      <div className="flex items-center gap-3 mb-5">
+        <Link href="/agenda" className="p-2 -ml-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </Link>
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Nuevo turno</h1>
+          <p className="text-sm text-gray-500">Completá los datos del turno</p>
+        </div>
+      </div>
+
+      <Suspense>
+        <NuevoTurnoPageForm pacientes={pacientes ?? []} terapeutaId={user.id} />
+      </Suspense>
+    </div>
+  )
+}
