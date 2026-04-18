@@ -107,6 +107,9 @@ export type Database = {
           estado: 'pendiente' | 'confirmado' | 'cancelado' | 'realizado' | 'no_asistio'
           monto: number | null
           notas: string | null
+          pagado: boolean
+          motivo_cancelacion: string | null
+          recordatorio_enviado: boolean
           created_at: string
           updated_at: string
         }
@@ -120,6 +123,9 @@ export type Database = {
           estado?: 'pendiente' | 'confirmado' | 'cancelado' | 'realizado' | 'no_asistio'
           monto?: number | null
           notas?: string | null
+          pagado?: boolean
+          motivo_cancelacion?: string | null
+          recordatorio_enviado?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -133,6 +139,9 @@ export type Database = {
           estado?: 'pendiente' | 'confirmado' | 'cancelado' | 'realizado' | 'no_asistio'
           monto?: number | null
           notas?: string | null
+          pagado?: boolean
+          motivo_cancelacion?: string | null
+          recordatorio_enviado?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -149,6 +158,61 @@ export type Database = {
             columns: ['terapeuta_id']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      notas_clinicas: {
+        Row: {
+          id: string
+          terapeuta_id: string
+          paciente_id: string
+          turno_id: string | null
+          fecha: string
+          contenido: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          terapeuta_id: string
+          paciente_id: string
+          turno_id?: string | null
+          fecha: string
+          contenido: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          terapeuta_id?: string
+          paciente_id?: string
+          turno_id?: string | null
+          fecha?: string
+          contenido?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'notas_clinicas_paciente_id_fkey'
+            columns: ['paciente_id']
+            isOneToOne: false
+            referencedRelation: 'pacientes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notas_clinicas_terapeuta_id_fkey'
+            columns: ['terapeuta_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notas_clinicas_turno_id_fkey'
+            columns: ['turno_id']
+            isOneToOne: false
+            referencedRelation: 'turnos'
             referencedColumns: ['id']
           },
         ]
@@ -170,14 +234,13 @@ export type Database = {
   }
 }
 
-// Tipos derivados del Database (fuente de verdad)
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Paciente = Database['public']['Tables']['pacientes']['Row']
 export type TurnoRow = Database['public']['Tables']['turnos']['Row']
 export type EstadoTurno = Database['public']['Enums']['estado_turno']
 export type ModalidadTurno = Database['public']['Enums']['modalidad_turno']
+export type NotaClinica = Database['public']['Tables']['notas_clinicas']['Row']
 
-// Turno con join de paciente para uso en componentes
 export interface Turno extends TurnoRow {
   paciente?: Paciente
 }

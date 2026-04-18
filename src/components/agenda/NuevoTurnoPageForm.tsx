@@ -5,9 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
-import { cn, formatNombreCompleto } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type { Paciente, ModalidadTurno } from '@/types/database'
 import MontoInput from '@/components/ui/MontoInput'
+import PacienteSearchInput from './PacienteSearchInput'
 
 const DURACIONES = [30, 45, 50, 60, 90]
 const MODALIDADES: { value: ModalidadTurno; label: string }[] = [
@@ -88,21 +89,12 @@ export default function NuevoTurnoPageForm({ pacientes, terapeutaId }: NuevoTurn
 
       <div className="card p-4">
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Paciente *</label>
-        <select
-          name="paciente_id"
+        <PacienteSearchInput
+          pacientes={pacientesActivos}
           value={form.paciente_id}
-          onChange={handleChange}
-          required
+          onChange={(id) => setForm((prev) => ({ ...prev, paciente_id: id }))}
           className="input-field"
-        >
-          <option value="">Seleccioná un paciente...</option>
-          {pacientesActivos.map((p) => (
-            <option key={p.id} value={p.id}>
-              {formatNombreCompleto(p.nombre, p.apellido)}
-              {p.obra_social ? ` — ${p.obra_social}` : ''}
-            </option>
-          ))}
-        </select>
+        />
       </div>
 
       <div className="card p-4 grid grid-cols-2 gap-3">

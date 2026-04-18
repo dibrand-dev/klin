@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
-import { cn, formatNombreCompleto } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type { Paciente, Turno, ModalidadTurno } from '@/types/database'
 import MontoInput from '@/components/ui/MontoInput'
+import PacienteSearchInput from './PacienteSearchInput'
 
 interface NuevoTurnoModalProps {
   fechaInicial: Date
@@ -108,21 +109,12 @@ export default function NuevoTurnoModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Paciente *</label>
-            <select
-              name="paciente_id"
+            <PacienteSearchInput
+              pacientes={pacientesActivos}
               value={form.paciente_id}
-              onChange={handleChange}
-              required
+              onChange={(id) => setForm((prev) => ({ ...prev, paciente_id: id }))}
               className="input-field"
-            >
-              <option value="">Seleccioná un paciente...</option>
-              {pacientesActivos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {formatNombreCompleto(p.nombre, p.apellido)}
-                  {p.obra_social ? ` — ${p.obra_social}` : ''}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

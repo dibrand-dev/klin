@@ -13,7 +13,7 @@ import {
   cn, ESTADO_TURNO_COLORS, ESTADO_TURNO_DOT,
   formatNombreCompleto,
 } from '@/lib/utils'
-import type { Turno, Paciente, EstadoTurno } from '@/types/database'
+import type { Turno, Paciente } from '@/types/database'
 import NuevoTurnoModal from './NuevoTurnoModal'
 import TurnoDetalleModal from './TurnoDetalleModal'
 
@@ -98,11 +98,9 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
       .sort((a, b) => new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime())
   }
 
-  async function cambiarEstado(turnoId: string, nuevoEstado: EstadoTurno) {
-    const supabase = createClient()
-    await supabase.from('turnos').update({ estado: nuevoEstado }).eq('id', turnoId)
-    setTurnos((prev) => prev.map((t) => t.id === turnoId ? { ...t, estado: nuevoEstado } : t))
-    setTurnoSeleccionado((prev) => prev?.id === turnoId ? { ...prev, estado: nuevoEstado } : prev)
+  function actualizarTurno(turnoActualizado: Turno) {
+    setTurnos((prev) => prev.map((t) => t.id === turnoActualizado.id ? turnoActualizado : t))
+    setTurnoSeleccionado(turnoActualizado)
   }
 
   const turnosSemana = turnos.filter((t) => {
@@ -144,9 +142,12 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
             >
               <div className="flex items-center gap-1 font-semibold truncate">
                 <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', ESTADO_TURNO_DOT[turno.estado])} />
-                <span className="truncate">
+                <span className="truncate flex-1">
                   {p ? formatNombreCompleto(p.nombre, p.apellido) : 'Paciente'}
                 </span>
+                {turno.pagado && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" title="Pagado" />
+                )}
               </div>
               {height > 40 && (
                 <div className="opacity-80 truncate mt-0.5">
@@ -343,7 +344,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
         <TurnoDetalleModal
           turno={turnoSeleccionado}
           onClose={() => setTurnoSeleccionado(null)}
-          onCambiarEstado={cambiarEstado}
+          onTurnoActualizado={actualizarTurno}
           onEliminar={async (id) => {
             const supabase = createClient()
             await supabase.from('turnos').delete().eq('id', id)

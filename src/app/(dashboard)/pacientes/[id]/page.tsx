@@ -10,12 +10,20 @@ export default async function PacienteDetallePage({ params }: { params: { id: st
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: paciente } = await supabase
-    .from('pacientes')
-    .select('*')
-    .eq('id', params.id)
-    .eq('terapeuta_id', user.id)
-    .single()
+  const [{ data: paciente }, { data: notas }] = await Promise.all([
+    supabase
+      .from('pacientes')
+      .select('*')
+      .eq('id', params.id)
+      .eq('terapeuta_id', user.id)
+      .single(),
+    supabase
+      .from('notas_clinicas')
+      .select('*')
+      .eq('paciente_id', params.id)
+      .eq('terapeuta_id', user.id)
+      .order('fecha', { ascending: false }),
+  ])
 
   if (!paciente) notFound()
 
@@ -36,7 +44,7 @@ export default async function PacienteDetallePage({ params }: { params: { id: st
         </div>
       </div>
 
-      <PacienteDetalle paciente={paciente} />
+      <PacienteDetalle paciente={paciente} notasIniciales={notas ?? []} terapeutaId={user.id} />
     </div>
   )
 }
