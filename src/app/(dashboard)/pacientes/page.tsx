@@ -27,10 +27,11 @@ export default async function PacientesPage() {
           </p>
         </div>
         <Link href="/pacientes/nuevo" className="btn-primary flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Nuevo paciente
+          <span className="hidden sm:inline">Nuevo paciente</span>
+          <span className="sm:hidden">Nuevo</span>
         </Link>
       </div>
 
