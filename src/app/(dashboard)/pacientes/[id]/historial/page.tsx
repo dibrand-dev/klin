@@ -6,9 +6,17 @@ import { es } from 'date-fns/locale'
 
 export const metadata = { title: 'Historial clínico — ConsultorioApp' }
 
+function limpiarMarkdown(texto: string): string {
+  return texto
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\[completar\]/g, '')
+    .trim()
+}
+
 function previewContenido(texto: string): string {
-  const lineas = texto.split('\n').filter((l) => l.trim())
-  return lineas.slice(0, 2).join(' ').slice(0, 200)
+  return limpiarMarkdown(texto.split('\n').filter((l) => l.trim()).join(' '))
 }
 
 export default async function HistorialPage({ params }: { params: { id: string } }) {
@@ -62,14 +70,18 @@ export default async function HistorialPage({ params }: { params: { id: string }
       </div>
 
       {!notas || notas.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <svg className="w-12 h-12 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="text-center py-16">
+          <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <p className="font-medium text-sm">Todavía no hay notas de sesión para este paciente</p>
-          <Link href={`/pacientes/${params.id}/historial/nueva`} className="btn-primary inline-block mt-4 text-sm">
-            Agregar primera nota
+          <p className="font-medium text-gray-700 text-sm">Todavía no hay notas para este paciente</p>
+          <p className="text-xs text-gray-400 mt-1.5">Las notas aparecen después de marcar un turno como realizado</p>
+          <Link
+            href={`/pacientes/${params.id}/historial/nueva`}
+            className="btn-primary inline-block mt-5 text-sm"
+          >
+            Nueva nota
           </Link>
         </div>
       ) : (
@@ -79,12 +91,13 @@ export default async function HistorialPage({ params }: { params: { id: string }
             const horaStr = format(parseISO(nota.created_at), 'HH:mm')
             return (
               <Link key={nota.id} href={`/pacientes/${params.id}/historial/${nota.id}`} className="block group">
-                <div className="bg-white border border-gray-200 rounded-xl p-4 group-hover:border-primary-200 group-hover:shadow-sm transition-all">
-                  <p className="text-xs text-gray-500 mb-2 capitalize">
-                    {fechaStr} — {horaStr}hs
+                <div className="bg-white border border-gray-100 border-l-4 border-l-primary-500 rounded-xl p-4 shadow-sm group-hover:shadow-md group-hover:border-l-primary-600 transition-all duration-200 cursor-pointer">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wide capitalize mb-0.5">
+                    {fechaStr} · {horaStr}hs
                   </p>
-                  <p className="text-sm text-gray-800 line-clamp-2">{previewContenido(nota.contenido)}</p>
-                  <p className="text-xs text-primary-600 font-medium mt-2.5 text-right">Ver →</p>
+                  <hr className="border-gray-100 my-2" />
+                  <p className="text-sm text-gray-700 line-clamp-3">{previewContenido(nota.contenido)}</p>
+                  <p className="text-xs font-medium text-primary-600 mt-2.5 text-right">Ver →</p>
                 </div>
               </Link>
             )

@@ -8,6 +8,15 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { NotaClinica } from '@/types/database'
 
+function limpiarMarkdown(texto: string): string {
+  return texto
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\[completar\]/g, '')
+    .trim()
+}
+
 export default function NotaDetalleEditor({ nota, pacienteId }: { nota: NotaClinica; pacienteId: string }) {
   const router = useRouter()
   const [editando, setEditando] = useState(false)
@@ -69,7 +78,7 @@ export default function NotaDetalleEditor({ nota, pacienteId }: { nota: NotaClin
         </>
       ) : (
         <>
-          <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{contenido}</p>
+          <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{limpiarMarkdown(contenido)}</p>
           <button
             onClick={() => setEditando(true)}
             className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-primary-600 transition-colors"
