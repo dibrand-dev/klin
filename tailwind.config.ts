@@ -10,25 +10,37 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+          50: '#EEF3FD',
+          100: '#DDE7FB',
+          200: '#BAC8F7',
+          300: '#8BA8F0',
+          400: '#5A83E6',
+          500: '#3462DC',
+          600: '#1F4FD9',
+          700: '#1940B0',
+          800: '#16389F',
+          900: '#112E88',
         },
-        consultorio: {
-          verde: '#10b981',
-          azul: '#0284c7',
-          violeta: '#7c3aed',
+        ok: {
+          DEFAULT: '#0E8A5F',
+          soft: '#E7F5EE',
+        },
+        warn: {
+          DEFAULT: '#A65A06',
+          soft: '#FBF1E2',
+        },
+        danger: {
+          DEFAULT: '#B42318',
+          soft: '#FBECEA',
+        },
+        violet: {
+          DEFAULT: '#5B3DC9',
+          soft: '#EEEAFB',
         },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
     },
   },
