@@ -187,10 +187,21 @@ export default function PacienteDetalle({
     // Sync medications: replace all existing ones
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      await supabase.from('medicacion_paciente').delete().eq('paciente_id', paciente.id)
+      const { error: delError } = await supabase
+        .from('medicacion_paciente')
+        .delete()
+        .eq('paciente_id', paciente.id)
+
+      if (delError) {
+        console.error('Error eliminando medicaciones:', delError)
+        setError(`Error al guardar medicaciones: ${delError.message}`)
+        setLoading(false)
+        return
+      }
+
       const medsFiltradas = medicaciones.filter((m) => m.nombre.trim())
       if (medsFiltradas.length > 0) {
-        await supabase.from('medicacion_paciente').insert(
+        const { error: insError } = await supabase.from('medicacion_paciente').insert(
           medsFiltradas.map((m) => ({
             terapeuta_id: user.id,
             paciente_id: paciente.id,
@@ -201,6 +212,12 @@ export default function PacienteDetalle({
             activa: true,
           }))
         )
+        if (insError) {
+          console.error('Error insertando medicaciones:', insError)
+          setError(`Error al guardar medicaciones: ${insError.message}`)
+          setLoading(false)
+          return
+        }
       }
     }
 
