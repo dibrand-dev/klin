@@ -113,7 +113,6 @@ export default async function HistorialPage({ params }: { params: { id: string }
         pacienteId={paciente.id}
         active="historial"
         historialCount={totalNotas}
-        turnosCount={turnosCount}
       />
 
       {totalNotas === 0 ? (

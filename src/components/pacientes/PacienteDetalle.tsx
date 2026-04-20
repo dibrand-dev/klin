@@ -90,10 +90,6 @@ export default function PacienteDetalle({
     router.refresh()
   }
 
-  if (tabParam && tabParam !== 'datos' && !editando) {
-    return <TabEmptyState tab={tabParam} />
-  }
-
   if (editando) {
     return (
       <form onSubmit={handleGuardar} className="mt-6 space-y-5">
@@ -154,88 +150,120 @@ export default function PacienteDetalle({
     )
   }
 
+  if (tabParam === 'resumen') {
+    return <ResumenTab paciente={paciente} />
+  }
+
+  if (tabParam && tabParam !== 'datos') {
+    return <TabEmptyState tab={tabParam} />
+  }
+
   const edad = paciente.fecha_nacimiento ? differenceInYears(new Date(), parseISO(paciente.fecha_nacimiento)) : null
   const fechaNacimiento = paciente.fecha_nacimiento
-    ? format(parseISO(paciente.fecha_nacimiento), "d 'de' MMMM 'de' yyyy", { locale: es })
+    ? format(parseISO(paciente.fecha_nacimiento), "d MMM yyyy", { locale: es })
     : null
   const telHref = normalizePhone(paciente.telefono)
 
   return (
-    <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
-      <KlinCard title="Información personal" action={
-        <button
-          type="button"
-          onClick={() => setEditando(true)}
-          className="text-[11.5px] font-bold text-primary hover:text-primary-container transition-colors"
-        >
-          Editar
-        </button>
-      }>
+    <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <KlinCard title="Información personal">
         <Kv rows={[
           ['Nombre completo', formatNombreCompleto(paciente.nombre, paciente.apellido)],
-          ['DNI', paciente.dni],
-          ['Fecha de nacimiento', fechaNacimiento ? `${fechaNacimiento}${edad ? ` (${edad} años)` : ''}` : null],
+          ['DNI', paciente.dni || '—'],
+          ['Fecha de nacimiento', fechaNacimiento ? `${fechaNacimiento}${edad !== null ? ` (${edad} años)` : ''}` : '—'],
+          ['Género', '—'],
+          ['Nacionalidad', '—'],
+          ['Ocupación', '—'],
+          ['Estado civil', '—'],
         ]} />
       </KlinCard>
 
       <KlinCard title="Contacto">
         <Kv rows={[
-          ['Email', paciente.email],
+          ['Email', paciente.email || '—'],
           ['Teléfono', telHref ? (
             <a href={`tel:${telHref}`} className="tel">
               {paciente.telefono}
             </a>
-          ) : null],
+          ) : '—'],
+          ['Domicilio', '—'],
+          ['Contacto emergencia', '—'],
         ]} />
       </KlinCard>
 
       <KlinCard title="Obra social">
         <Kv rows={[
-          ['Obra social', paciente.obra_social],
-          ['Credencial', paciente.numero_afiliado],
+          ['Obra social', paciente.obra_social || '—'],
+          ['Plan', '—'],
+          ['Credencial', paciente.numero_afiliado || '—'],
+          ['Autorización', '—'],
         ]} />
       </KlinCard>
 
-      <KlinCard title="Notas">
-        {paciente.notas ? (
-          <p className="text-[14px] text-on-surface leading-[1.6] whitespace-pre-wrap" style={{ textWrap: 'pretty' } as React.CSSProperties}>
-            {paciente.notas}
-          </p>
-        ) : (
-          <p className="text-[13px] text-on-surface-variant">Sin notas registradas. Usá &quot;Editar&quot; para agregar motivo de consulta u observaciones.</p>
-        )}
+      <KlinCard title="Tratamiento">
+        <Kv rows={[
+          ['Profesional', '—'],
+          ['Modalidad', '—'],
+          ['Frecuencia', '—'],
+          ['Honorario', '—'],
+          ['Inicio', '—'],
+        ]} />
       </KlinCard>
     </div>
   )
 }
 
-function KlinCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+function ResumenTab({ paciente }: { paciente: Paciente }) {
+  const evolucion = paciente.notas || null
+
   return (
-    <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-sm p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest m-0">
-          {title}
-        </h3>
-        {action}
+    <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl p-6 border border-outline-variant/20 shadow-sm">
+          <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-4">Evolución del tratamiento</h3>
+          {evolucion ? (
+            <p className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap">{evolucion}</p>
+          ) : (
+            <p className="text-sm text-on-surface-variant">Sin datos registrados.</p>
+          )}
+        </div>
+        <div className="bg-white rounded-2xl p-6 border border-outline-variant/20 shadow-sm">
+          <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-4">Objetivos terapéuticos</h3>
+          <p className="text-sm text-on-surface-variant">Sin datos registrados.</p>
+        </div>
       </div>
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl p-6 border border-outline-variant/20 shadow-sm">
+          <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-4">Diagnóstico</h3>
+          <p className="text-sm text-on-surface-variant">Sin datos registrados.</p>
+        </div>
+        <div className="bg-white rounded-2xl p-6 border border-outline-variant/20 shadow-sm">
+          <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-4">Medicación</h3>
+          <p className="text-sm text-on-surface-variant">Sin datos registrados.</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function KlinCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-2xl p-6 border border-outline-variant/20 shadow-sm">
+      <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-6">
+        {title}
+      </h3>
       {children}
     </div>
   )
 }
 
 function Kv({ rows }: { rows: [string, React.ReactNode][] }) {
-  const filtered = rows.filter(([, v]) => v !== null && v !== undefined && v !== '')
-  if (filtered.length === 0) {
-    return <p className="text-[13px] text-on-surface-variant">Sin datos cargados.</p>
-  }
   return (
-    <dl className="grid gap-y-2 gap-x-4 text-[13.5px]" style={{ gridTemplateColumns: '140px 1fr' }}>
-      {filtered.map(([k, v], i) => (
+    <dl className="kv">
+      {rows.map(([k, v], i) => (
         <div key={i} className="contents">
-          <dt className="text-on-surface-variant font-normal">
-            {k}
-          </dt>
-          <dd className="text-on-surface font-medium m-0">{v}</dd>
+          <dt>{k}</dt>
+          <dd>{v}</dd>
         </div>
       ))}
     </dl>
@@ -277,23 +305,20 @@ function Field({
 
 function TabEmptyState({ tab }: { tab: PacienteTabKey }) {
   const config: Record<PacienteTabKey, { title: string; body: string }> = {
-    resumen: {
-      title: 'Resumen del paciente',
-      body: 'Evolución del tratamiento, objetivos y diagnóstico. Próximamente.',
-    },
+    resumen: { title: 'Resumen del paciente', body: '' },
     datos: { title: 'Datos personales', body: '' },
     historial: { title: 'Historial clínico', body: '' },
-    turnos: {
-      title: 'Turnos',
-      body: 'Ver los turnos agendados para este paciente. Próximamente vas a ver la grilla completa.',
+    informes: {
+      title: 'Informes',
+      body: 'Los informes clínicos del paciente aparecerán aquí. Próximamente.',
     },
     documentos: {
       title: 'Documentos y adjuntos',
       body: 'Consentimientos informados, estudios, informes. Próximamente.',
     },
-    notas: {
-      title: 'Notas privadas',
-      body: 'Notas del terapeuta que no forman parte de la historia clínica. Próximamente.',
+    facturacion: {
+      title: 'Facturación',
+      body: 'Historial de pagos y estado de cuenta. Próximamente.',
     },
   }
   const c = config[tab]

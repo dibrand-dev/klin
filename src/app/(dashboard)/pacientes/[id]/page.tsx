@@ -61,9 +61,9 @@ export default async function PacienteDetallePage({
 
   const tab: PacienteTabKey =
     searchParams.tab === 'resumen' ||
-    searchParams.tab === 'turnos' ||
+    searchParams.tab === 'informes' ||
     searchParams.tab === 'documentos' ||
-    searchParams.tab === 'notas'
+    searchParams.tab === 'facturacion'
       ? searchParams.tab
       : 'datos'
 
@@ -76,7 +76,6 @@ export default async function PacienteDetallePage({
         pacienteId={paciente.id}
         active={tab}
         historialCount={historialCount}
-        turnosCount={turnosCount}
       />
       <PacienteDetalle paciente={paciente} activeTab={tab} initialEdit={editMode} />
     </div>

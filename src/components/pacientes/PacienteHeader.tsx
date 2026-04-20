@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { parseISO, differenceInYears, format } from 'date-fns'
@@ -24,6 +25,18 @@ export default function PacienteHeader({
   summary: SummaryData
 }) {
   const router = useRouter()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    if (menuOpen) document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [menuOpen])
 
   const iniciales = `${paciente.nombre[0] ?? ''}${paciente.apellido[0] ?? ''}`.toUpperCase()
   const edad = paciente.fecha_nacimiento
@@ -38,7 +51,6 @@ export default function PacienteHeader({
     router.push('/pacientes')
   }
 
-  // Summary strip values
   const motivo = paciente.notas?.split('\n')[0]?.trim() || null
 
   const proximaSesionLabel = (() => {
@@ -69,7 +81,36 @@ export default function PacienteHeader({
       </nav>
 
       {/* Patient header card */}
-      <div className="bg-surface-container-lowest rounded-xl p-6 md:p-8 mb-8 shadow-card border border-outline-variant/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-surface-container-lowest rounded-xl p-6 md:p-8 mb-8 shadow-[0_8px_24px_rgba(0,26,72,0.04)] border border-outline-variant/10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative pr-12 md:pr-16">
+
+        {/* More menu */}
+        <div className="absolute top-4 right-4 md:top-6 md:right-6" ref={menuRef}>
+          <button
+            className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-full transition-colors flex items-center justify-center"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            <span className="material-symbols-outlined">more_vert</span>
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-outline-variant/20 overflow-hidden z-20">
+              <button
+                className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                onClick={() => { setMenuOpen(false); router.push(`/pacientes/${paciente.id}?edit=1`) }}
+              >
+                <span className="material-symbols-outlined text-[18px]">edit</span>
+                Editar
+              </button>
+              <button
+                className="w-full px-4 py-3 flex items-center gap-3 text-sm font-medium text-error hover:bg-error-container/20 transition-colors text-left border-t border-outline-variant/10"
+                onClick={() => { setMenuOpen(false); handleEliminar() }}
+              >
+                <span className="material-symbols-outlined text-[18px]">delete</span>
+                Eliminar
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center gap-4 md:gap-6">
           {/* Avatar */}
           <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary-fixed border-4 border-white shadow-lg flex items-center justify-center flex-none select-none">
@@ -96,24 +137,24 @@ export default function PacienteHeader({
             {/* Meta row */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 font-medium">
               <span className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>fingerprint</span>
+                <span className="material-symbols-outlined text-sm">fingerprint</span>
                 PAC-{paciente.id.slice(0, 8).toUpperCase()}
               </span>
               {edad !== null && (
                 <span className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>cake</span>
+                  <span className="material-symbols-outlined text-sm">cake</span>
                   {edad} años
                 </span>
               )}
               {paciente.obra_social && (
                 <span className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>medical_services</span>
+                  <span className="material-symbols-outlined text-sm">medical_services</span>
                   {paciente.obra_social}
                 </span>
               )}
               {paciente.telefono && (
                 <span className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>phone</span>
+                  <span className="material-symbols-outlined text-sm">phone</span>
                   <a href={`tel:${paciente.telefono.replace(/[^\d+]/g, '')}`} className="tel">
                     {paciente.telefono}
                   </a>
@@ -124,7 +165,7 @@ export default function PacienteHeader({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-3">
           <Link
             href="/turnos/nuevo"
             className="flex-1 md:flex-none px-5 py-2.5 bg-primary-fixed text-on-primary-fixed rounded-lg font-bold text-sm hover:bg-secondary-fixed transition-colors text-center"
@@ -133,18 +174,10 @@ export default function PacienteHeader({
           </Link>
           <Link
             href={`/pacientes/${paciente.id}/historial/nueva`}
-            className="flex-1 md:flex-none px-5 py-2.5 bg-primary text-white rounded-lg font-bold text-sm shadow-primary hover:bg-primary-container transition-colors text-center"
+            className="flex-1 md:flex-none px-5 py-2.5 bg-primary text-white rounded-lg font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-container transition-colors text-center"
           >
             Nota clínica
           </Link>
-          <button
-            type="button"
-            onClick={handleEliminar}
-            className="flex-none p-2.5 text-error hover:bg-error-container/20 rounded-lg transition-colors flex items-center justify-center border border-error/20"
-            title="Eliminar paciente"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>delete</span>
-          </button>
         </div>
       </div>
 

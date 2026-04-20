@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-export type PacienteTabKey = 'resumen' | 'datos' | 'historial' | 'turnos' | 'documentos' | 'notas'
+export type PacienteTabKey = 'resumen' | 'datos' | 'historial' | 'informes' | 'documentos' | 'facturacion'
 
 interface TabDef {
   key: PacienteTabKey
@@ -15,22 +15,18 @@ export default function PacienteTabs({
   pacienteId,
   active,
   historialCount,
-  turnosCount,
-  documentosCount,
 }: {
   pacienteId: string
   active: PacienteTabKey
   historialCount?: number
-  turnosCount?: number
-  documentosCount?: number
 }) {
   const tabs: TabDef[] = [
     { key: 'resumen', label: 'Resumen' },
     { key: 'datos', label: 'Datos personales' },
     { key: 'historial', label: 'Historial clínico', badge: historialCount },
-    { key: 'turnos', label: 'Turnos', badge: turnosCount },
-    { key: 'documentos', label: 'Documentos', badge: documentosCount },
-    { key: 'notas', label: 'Notas privadas' },
+    { key: 'informes', label: 'Informes' },
+    { key: 'documentos', label: 'Documentos' },
+    { key: 'facturacion', label: 'Facturación' },
   ]
 
   return (
@@ -41,9 +37,9 @@ export default function PacienteTabs({
           tab.key === 'datos' ? `/pacientes/${pacienteId}`
           : tab.key === 'historial' ? `/pacientes/${pacienteId}/historial`
           : tab.key === 'resumen' ? `/pacientes/${pacienteId}?tab=resumen`
-          : tab.key === 'turnos' ? `/pacientes/${pacienteId}?tab=turnos`
+          : tab.key === 'informes' ? `/pacientes/${pacienteId}?tab=informes`
           : tab.key === 'documentos' ? `/pacientes/${pacienteId}?tab=documentos`
-          : `/pacientes/${pacienteId}?tab=notas`
+          : `/pacientes/${pacienteId}?tab=facturacion`
 
         return (
           <Link
