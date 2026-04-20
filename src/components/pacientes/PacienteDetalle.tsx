@@ -6,7 +6,7 @@ import { format, parseISO, differenceInYears } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
 import { cn, formatNombreCompleto } from '@/lib/utils'
-import type { Paciente } from '@/types/database'
+import type { Paciente, MedicacionPaciente } from '@/types/database'
 import type { PacienteTabKey } from './PacienteTabs'
 import { PAISES, OBRAS_SOCIALES_AR, PLANES_POR_OS } from '@/lib/data/salud-ar'
 
@@ -90,22 +90,46 @@ function buildForm(p: Paciente) {
   }
 }
 
+type MedicacionEdit = { nombre: string; dosis: string; frecuencia: string; prescriptor: string }
+const EMPTY_MED: MedicacionEdit = { nombre: '', dosis: '', frecuencia: '', prescriptor: '' }
+
+function toMedicacionEdit(m: MedicacionPaciente): MedicacionEdit {
+  return { nombre: m.nombre, dosis: m.dosis ?? '', frecuencia: m.frecuencia ?? '', prescriptor: m.prescriptor ?? '' }
+}
+
 export default function PacienteDetalle({
   paciente,
+  medicacionesIniciales = [],
   initialEdit = false,
   activeTab = 'datos',
 }: {
   paciente: Paciente
+  medicacionesIniciales?: MedicacionPaciente[]
   initialEdit?: boolean
   activeTab?: PacienteTabKey
 }) {
   const router = useRouter()
   const [editando, setEditando] = useState(initialEdit)
   const [form, setForm] = useState(() => buildForm(paciente))
+  const [medicaciones, setMedicaciones] = useState<MedicacionEdit[]>(() =>
+    medicacionesIniciales.map(toMedicacionEdit)
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const planesDisponibles = PLANES_POR_OS[form.obra_social] ?? []
+
+  function addMedicacion() {
+    setMedicaciones((prev) => [...prev, { ...EMPTY_MED }])
+  }
+
+  function removeMedicacion(idx: number) {
+    setMedicaciones((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  function updateMedicacion(idx: number, field: keyof MedicacionEdit, value: string) {
+    setMedicaciones((prev) => prev.map((m, i) => (i === idx ? { ...m, [field]: value } : m)))
+  }
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -115,6 +139,7 @@ export default function PacienteDetalle({
 
   function handleCancelar() {
     setForm(buildForm(paciente))
+    setMedicaciones(medicacionesIniciales.map(toMedicacionEdit))
     setError(null)
     setEditando(false)
   }
@@ -158,6 +183,27 @@ export default function PacienteDetalle({
       setLoading(false)
       return
     }
+
+    // Sync medications: replace all existing ones
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('medicacion_paciente').delete().eq('paciente_id', paciente.id)
+      const medsFiltradas = medicaciones.filter((m) => m.nombre.trim())
+      if (medsFiltradas.length > 0) {
+        await supabase.from('medicacion_paciente').insert(
+          medsFiltradas.map((m) => ({
+            terapeuta_id: user.id,
+            paciente_id: paciente.id,
+            nombre: m.nombre.trim(),
+            dosis: m.dosis || null,
+            frecuencia: m.frecuencia || null,
+            prescriptor: m.prescriptor || null,
+            activa: true,
+          }))
+        )
+      }
+    }
+
     setEditando(false)
     setLoading(false)
     router.refresh()
@@ -343,6 +389,56 @@ export default function PacienteDetalle({
           </div>
         </FormCard>
 
+        {/* Medicación */}
+        <FormCard title="Medicación" icon="medication">
+          <div className="flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={addMedicacion}
+              className="flex items-center gap-1.5 text-sm font-medium text-primary hover:bg-primary/5 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Agregar medicamento
+            </button>
+          </div>
+          {medicaciones.length === 0 ? (
+            <div className="text-center py-6 text-on-surface-variant">
+              <span className="material-symbols-outlined text-4xl mb-2 block opacity-25">medication</span>
+              <p className="text-sm">Sin medicación registrada</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {medicaciones.map((med, idx) => (
+                <div key={idx} className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-outline-variant/20 rounded-lg bg-surface-container-high/30">
+                  <button
+                    type="button"
+                    onClick={() => removeMedicacion(idx)}
+                    className="absolute top-3 right-3 p-1 text-on-surface-variant hover:text-error hover:bg-red-50 rounded-full transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">close</span>
+                  </button>
+                  <div>
+                    <label className={labelCls}>Medicamento <span className="text-error">*</span></label>
+                    <input type="text" value={med.nombre} onChange={(e) => updateMedicacion(idx, 'nombre', e.target.value)} placeholder="Fluoxetina" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Dosis</label>
+                    <input type="text" value={med.dosis} onChange={(e) => updateMedicacion(idx, 'dosis', e.target.value)} placeholder="20mg" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Frecuencia</label>
+                    <input type="text" value={med.frecuencia} onChange={(e) => updateMedicacion(idx, 'frecuencia', e.target.value)} placeholder="1 vez al día" className={inputCls} />
+                  </div>
+                  <div className="pr-8">
+                    <label className={labelCls}>Prescriptor</label>
+                    <input type="text" value={med.prescriptor} onChange={(e) => updateMedicacion(idx, 'prescriptor', e.target.value)} placeholder="Dr. García" className={inputCls} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </FormCard>
+
         <div className="flex gap-3 pt-1">
           <button type="button" onClick={handleCancelar} className="btn-secondary flex-1 justify-center py-2.5">
             Cancelar
@@ -361,7 +457,7 @@ export default function PacienteDetalle({
   }
 
   if (activeTab === 'resumen') {
-    return <ResumenTab paciente={paciente} />
+    return <ResumenTab paciente={paciente} medicaciones={medicacionesIniciales} />
   }
 
   if (activeTab && activeTab !== 'datos') {
@@ -453,7 +549,7 @@ export default function PacienteDetalle({
   )
 }
 
-function ResumenTab({ paciente }: { paciente: Paciente }) {
+function ResumenTab({ paciente, medicaciones }: { paciente: Paciente; medicaciones: MedicacionPaciente[] }) {
   const evolucion = paciente.notas || null
   const motivo = paciente.motivo_consulta || null
 
@@ -507,7 +603,22 @@ function ResumenTab({ paciente }: { paciente: Paciente }) {
           <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-4">
             Medicación
           </h3>
-          <p className="text-sm text-on-surface-variant">Sin datos registrados.</p>
+          {medicaciones.length > 0 ? (
+            <ul className="space-y-3">
+              {medicaciones.map((m) => (
+                <li key={m.id} className="flex flex-col gap-0.5">
+                  <span className="text-sm font-semibold text-on-surface">{m.nombre}{m.dosis ? ` — ${m.dosis}` : ''}</span>
+                  {(m.frecuencia || m.prescriptor) && (
+                    <span className="text-xs text-on-surface-variant">
+                      {[m.frecuencia, m.prescriptor ? `Prescriptor: ${m.prescriptor}` : ''].filter(Boolean).join(' · ')}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-on-surface-variant">Sin datos registrados.</p>
+          )}
         </div>
       </div>
     </div>

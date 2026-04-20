@@ -17,7 +17,7 @@ export default async function PacienteDetallePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: paciente }, turnosRes, notasRes] = await Promise.all([
+  const [{ data: paciente }, turnosRes, notasRes, medicacionesRes] = await Promise.all([
     supabase
       .from('pacientes')
       .select('*')
@@ -35,6 +35,13 @@ export default async function PacienteDetallePage({
       .select('id', { count: 'exact', head: true })
       .eq('paciente_id', params.id)
       .eq('terapeuta_id', user.id),
+    supabase
+      .from('medicacion_paciente')
+      .select('*')
+      .eq('paciente_id', params.id)
+      .eq('terapeuta_id', user.id)
+      .eq('activa', true)
+      .order('created_at'),
   ])
 
   if (!paciente) notFound()
@@ -57,6 +64,7 @@ export default async function PacienteDetallePage({
   }
 
   const historialCount = notasRes.count || 0
+  const medicaciones = medicacionesRes.data ?? []
   const turnosCount = turnos.filter((t) => t.estado !== 'cancelado').length
 
   const tab: PacienteTabKey =
@@ -79,6 +87,7 @@ export default async function PacienteDetallePage({
       />
       <PacienteDetalle
         paciente={paciente}
+        medicacionesIniciales={medicaciones}
         activeTab={tab}
         initialEdit={editMode}
         key={editMode ? 'edit' : 'view'}

@@ -78,9 +78,13 @@ function CurrencyInput({
   )
 }
 
+type MedicacionForm = { nombre: string; dosis: string; frecuencia: string; prescriptor: string }
+const EMPTY_MED: MedicacionForm = { nombre: '', dosis: '', frecuencia: '', prescriptor: '' }
+
 export default function NuevoPacienteForm({ terapeutaId }: { terapeutaId: string }) {
   const router = useRouter()
   const [form, setForm] = useState(EMPTY_FORM)
+  const [medicaciones, setMedicaciones] = useState<MedicacionForm[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -92,6 +96,18 @@ export default function NuevoPacienteForm({ terapeutaId }: { terapeutaId: string
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  function addMedicacion() {
+    setMedicaciones((prev) => [...prev, { ...EMPTY_MED }])
+  }
+
+  function removeMedicacion(idx: number) {
+    setMedicaciones((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  function updateMedicacion(idx: number, field: keyof MedicacionForm, value: string) {
+    setMedicaciones((prev) => prev.map((m, i) => (i === idx ? { ...m, [field]: value } : m)))
+  }
+
   async function handleSubmit() {
     if (!form.nombre.trim() || !form.apellido.trim()) {
       setError('Nombre y apellido son obligatorios.')
@@ -100,40 +116,59 @@ export default function NuevoPacienteForm({ terapeutaId }: { terapeutaId: string
     setLoading(true)
     setError(null)
     const supabase = createClient()
-    const { error: dbError } = await supabase.from('pacientes').insert({
-      terapeuta_id: terapeutaId,
-      nombre: form.nombre.trim(),
-      apellido: form.apellido.trim(),
-      dni: form.dni || null,
-      fecha_nacimiento: form.fecha_nacimiento || null,
-      telefono: form.telefono || null,
-      email: form.email || null,
-      genero: form.genero || null,
-      nacionalidad: form.nacionalidad || null,
-      estado_civil: form.estado_civil || null,
-      domicilio: form.domicilio || null,
-      ocupacion: form.ocupacion || null,
-      contacto_emergencia_nombre: form.contacto_emergencia_nombre || null,
-      contacto_emergencia_telefono: form.contacto_emergencia_telefono || null,
-      obra_social: form.obra_social || null,
-      plan_obra_social: form.plan_obra_social || null,
-      numero_afiliado: form.numero_afiliado || null,
-      numero_autorizacion: form.numero_autorizacion || null,
-      modalidad_tratamiento: form.modalidad_tratamiento || null,
-      frecuencia_sesiones: form.frecuencia_sesiones || null,
-      honorarios: form.honorarios ? parseFloat(form.honorarios) : null,
-      motivo_consulta: form.motivo_consulta || null,
-      notas: form.notas || null,
-      codigo_diagnostico: form.codigo_diagnostico || null,
-      gravedad_estimada: form.gravedad_estimada || null,
-      activo: true,
-    })
+    const { data: newPaciente, error: dbError } = await supabase
+      .from('pacientes')
+      .insert({
+        terapeuta_id: terapeutaId,
+        nombre: form.nombre.trim(),
+        apellido: form.apellido.trim(),
+        dni: form.dni || null,
+        fecha_nacimiento: form.fecha_nacimiento || null,
+        telefono: form.telefono || null,
+        email: form.email || null,
+        genero: form.genero || null,
+        nacionalidad: form.nacionalidad || null,
+        estado_civil: form.estado_civil || null,
+        domicilio: form.domicilio || null,
+        ocupacion: form.ocupacion || null,
+        contacto_emergencia_nombre: form.contacto_emergencia_nombre || null,
+        contacto_emergencia_telefono: form.contacto_emergencia_telefono || null,
+        obra_social: form.obra_social || null,
+        plan_obra_social: form.plan_obra_social || null,
+        numero_afiliado: form.numero_afiliado || null,
+        numero_autorizacion: form.numero_autorizacion || null,
+        modalidad_tratamiento: form.modalidad_tratamiento || null,
+        frecuencia_sesiones: form.frecuencia_sesiones || null,
+        honorarios: form.honorarios ? parseFloat(form.honorarios) : null,
+        motivo_consulta: form.motivo_consulta || null,
+        notas: form.notas || null,
+        codigo_diagnostico: form.codigo_diagnostico || null,
+        gravedad_estimada: form.gravedad_estimada || null,
+        activo: true,
+      })
+      .select('id')
+      .single()
 
-    if (dbError) {
+    if (dbError || !newPaciente) {
       console.error('Supabase insert error:', dbError)
       setError('Error al guardar el paciente. Intentá de nuevo.')
       setLoading(false)
       return
+    }
+
+    const medsFiltradas = medicaciones.filter((m) => m.nombre.trim())
+    if (medsFiltradas.length > 0) {
+      await supabase.from('medicacion_paciente').insert(
+        medsFiltradas.map((m) => ({
+          terapeuta_id: terapeutaId,
+          paciente_id: newPaciente.id,
+          nombre: m.nombre.trim(),
+          dosis: m.dosis || null,
+          frecuencia: m.frecuencia || null,
+          prescriptor: m.prescriptor || null,
+          activa: true,
+        }))
+      )
     }
 
     router.push('/pacientes')
@@ -416,6 +451,62 @@ export default function NuevoPacienteForm({ terapeutaId }: { terapeutaId: string
               </select>
             </div>
           </div>
+        </div>
+
+        {/* Card 4 — Medicación */}
+        <div className="bg-surface-container-lowest rounded-xl p-8 shadow-[0_8px_24px_rgba(0,26,72,0.06)]">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-[20px]">medication</span>
+              Medicación
+            </h3>
+            <button
+              type="button"
+              onClick={addMedicacion}
+              className="flex items-center gap-1.5 text-sm font-medium text-primary hover:bg-primary/5 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Agregar medicamento
+            </button>
+          </div>
+
+          {medicaciones.length === 0 ? (
+            <div className="text-center py-8 text-on-surface-variant">
+              <span className="material-symbols-outlined text-4xl mb-2 block opacity-25">medication</span>
+              <p className="text-sm">Sin medicación registrada</p>
+              <p className="text-xs opacity-70 mt-1">Hacé clic en "Agregar medicamento" para sumar uno</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {medicaciones.map((med, idx) => (
+                <div key={idx} className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-outline-variant/20 rounded-lg bg-surface-container-high/30">
+                  <button
+                    type="button"
+                    onClick={() => removeMedicacion(idx)}
+                    className="absolute top-3 right-3 p-1 text-on-surface-variant hover:text-error hover:bg-red-50 rounded-full transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">close</span>
+                  </button>
+                  <div>
+                    <label className={labelCls}>Medicamento <span className="text-error">*</span></label>
+                    <input type="text" value={med.nombre} onChange={(e) => updateMedicacion(idx, 'nombre', e.target.value)} placeholder="Fluoxetina" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Dosis</label>
+                    <input type="text" value={med.dosis} onChange={(e) => updateMedicacion(idx, 'dosis', e.target.value)} placeholder="20mg" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Frecuencia</label>
+                    <input type="text" value={med.frecuencia} onChange={(e) => updateMedicacion(idx, 'frecuencia', e.target.value)} placeholder="1 vez al día" className={inputCls} />
+                  </div>
+                  <div className="pr-8">
+                    <label className={labelCls}>Prescriptor</label>
+                    <input type="text" value={med.prescriptor} onChange={(e) => updateMedicacion(idx, 'prescriptor', e.target.value)} placeholder="Dr. García" className={inputCls} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </>
