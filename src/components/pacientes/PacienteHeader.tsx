@@ -118,24 +118,13 @@ export default function PacienteHeader({
           </div>
 
           <div>
-            {/* Name + status */}
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-1">
-              <h1 className="text-2xl md:text-3xl font-extrabold text-primary tracking-tighter">
-                {formatNombreCompleto(paciente.nombre, paciente.apellido)}
-              </h1>
-              {paciente.activo ? (
-                <span className="bg-tertiary-fixed text-on-tertiary-fixed-variant px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit">
-                  En tratamiento
-                </span>
-              ) : (
-                <span className="bg-surface-container text-on-surface-variant px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit">
-                  Inactivo
-                </span>
-              )}
-            </div>
+            {/* Name */}
+            <h1 className="text-2xl md:text-3xl font-extrabold text-primary tracking-tighter mb-1">
+              {formatNombreCompleto(paciente.nombre, paciente.apellido)}
+            </h1>
 
             {/* Meta row */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 font-medium">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 font-medium mb-2">
               <span className="flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-sm">fingerprint</span>
                 PAC-{paciente.id.slice(0, 8).toUpperCase()}
@@ -161,6 +150,17 @@ export default function PacienteHeader({
                 </span>
               )}
             </div>
+
+            {/* Status pill */}
+            {paciente.activo ? (
+              <span className="bg-tertiary-fixed text-on-tertiary-fixed-variant px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block">
+                En tratamiento
+              </span>
+            ) : (
+              <span className="bg-surface-container text-on-surface-variant px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block">
+                Inactivo
+              </span>
+            )}
           </div>
         </div>
 
