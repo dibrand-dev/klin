@@ -8,11 +8,53 @@ import { createClient } from '@/lib/supabase/client'
 import { cn, formatNombreCompleto } from '@/lib/utils'
 import type { Paciente } from '@/types/database'
 import type { PacienteTabKey } from './PacienteTabs'
+import { PAISES, OBRAS_SOCIALES_AR, PLANES_POR_OS } from '@/lib/data/salud-ar'
 
 const inputCls =
   'w-full bg-surface-container-high border border-outline-variant/15 text-on-surface rounded-lg px-4 py-3 text-sm focus:bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none'
 const labelCls =
   'block text-[10px] font-semibold uppercase tracking-[0.05em] text-on-surface-variant mb-2'
+
+function CurrencyInput({
+  value,
+  onChange,
+  className,
+}: {
+  value: string
+  onChange: (raw: string) => void
+  className?: string
+}) {
+  const [focused, setFocused] = useState(false)
+
+  const displayValue =
+    !focused && value
+      ? new Intl.NumberFormat('es-AR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(parseFloat(value) || 0)
+      : value
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    let raw = e.target.value.replace(/[^\d.,]/g, '')
+    raw = raw.replace(',', '.')
+    const parts = raw.split('.')
+    if (parts.length > 2) raw = parts[0] + '.' + parts.slice(1).join('')
+    onChange(raw)
+  }
+
+  return (
+    <input
+      type="text"
+      value={displayValue}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={handleChange}
+      placeholder="0,00"
+      className={className}
+      inputMode="decimal"
+    />
+  )
+}
 
 function normalizePhone(t: string | null | undefined): string | null {
   if (!t) return null
@@ -62,6 +104,8 @@ export default function PacienteDetalle({
   const [form, setForm] = useState(() => buildForm(paciente))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const planesDisponibles = PLANES_POR_OS[form.obra_social] ?? []
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -121,7 +165,17 @@ export default function PacienteDetalle({
 
   if (editando) {
     return (
-      <form onSubmit={handleGuardar} className="mt-6 flex flex-col gap-6 pb-10">
+      <>
+        <datalist id="pd-paises">
+          {PAISES.map((p) => <option key={p} value={p} />)}
+        </datalist>
+        <datalist id="pd-obras-sociales">
+          {OBRAS_SOCIALES_AR.map((o) => <option key={o} value={o} />)}
+        </datalist>
+        <datalist id="pd-planes">
+          {planesDisponibles.map((p) => <option key={p} value={p} />)}
+        </datalist>
+        <form onSubmit={handleGuardar} className="mt-6 flex flex-col gap-6 pb-10">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
             {error}
@@ -173,7 +227,7 @@ export default function PacienteDetalle({
             </div>
             <div>
               <label className={labelCls}>Nacionalidad</label>
-              <input name="nacionalidad" type="text" value={form.nacionalidad} onChange={handleChange} placeholder="Argentina" className={inputCls} />
+              <input name="nacionalidad" type="text" value={form.nacionalidad} onChange={handleChange} placeholder="Argentina" list="pd-paises" autoComplete="off" className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Estado Civil</label>
@@ -215,11 +269,11 @@ export default function PacienteDetalle({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <div>
               <label className={labelCls}>Obra Social / Prepaga</label>
-              <input name="obra_social" type="text" value={form.obra_social} onChange={handleChange} placeholder="OSDE, IOMA, Particular..." className={inputCls} />
+              <input name="obra_social" type="text" value={form.obra_social} onChange={handleChange} placeholder="OSDE, Swiss Medical..." list="pd-obras-sociales" autoComplete="off" className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Plan</label>
-              <input name="plan_obra_social" type="text" value={form.plan_obra_social} onChange={handleChange} placeholder="310, Bronce, Gold..." className={inputCls} />
+              <input name="plan_obra_social" type="text" value={form.plan_obra_social} onChange={handleChange} placeholder={planesDisponibles.length ? 'Seleccionar o escribir...' : '310, Bronce, Gold...'} list="pd-planes" autoComplete="off" className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>N° de Afiliado</label>
@@ -251,8 +305,12 @@ export default function PacienteDetalle({
             <div>
               <label className={labelCls}>Honorarios por sesión</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm font-medium">ARS</span>
-                <input name="honorarios" type="number" min="0" step="0.01" value={form.honorarios} onChange={handleChange} placeholder="0.00" className={cn(inputCls, 'pl-12')} />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm font-medium pointer-events-none">ARS</span>
+                <CurrencyInput
+                  value={form.honorarios}
+                  onChange={(val) => setForm((prev) => ({ ...prev, honorarios: val }))}
+                  className={cn(inputCls, 'pl-12')}
+                />
               </div>
             </div>
           </div>
@@ -298,6 +356,7 @@ export default function PacienteDetalle({
           </button>
         </div>
       </form>
+      </>
     )
   }
 
