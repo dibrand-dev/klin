@@ -130,7 +130,8 @@ export default function NuevoPacienteForm({ terapeutaId }: { terapeutaId: string
     })
 
     if (dbError) {
-      setError('Error al guardar el paciente. Intentá de nuevo.')
+      console.error('Supabase insert error:', dbError)
+      setError(`Error al guardar el paciente: ${dbError.message}${dbError.hint ? ` — ${dbError.hint}` : ''}`)
       setLoading(false)
       return
     }
