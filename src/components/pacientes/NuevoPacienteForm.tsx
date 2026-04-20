@@ -474,7 +474,7 @@ export default function NuevoPacienteForm({ terapeutaId }: { terapeutaId: string
             <div className="text-center py-8 text-on-surface-variant">
               <span className="material-symbols-outlined text-4xl mb-2 block opacity-25">medication</span>
               <p className="text-sm">Sin medicación registrada</p>
-              <p className="text-xs opacity-70 mt-1">Hacé clic en "Agregar medicamento" para sumar uno</p>
+              <p className="text-xs opacity-70 mt-1">Hacé clic en &quot;Agregar medicamento&quot; para sumar uno</p>
             </div>
           ) : (
             <div className="space-y-3">
