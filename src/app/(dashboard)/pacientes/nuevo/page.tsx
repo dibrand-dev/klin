@@ -12,7 +12,7 @@ export default async function NuevoPacientePage() {
   if (!user) redirect('/login')
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 md:pt-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/pacientes" className="text-gray-400 hover:text-gray-600 transition-colors">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

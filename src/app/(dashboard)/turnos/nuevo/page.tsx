@@ -19,7 +19,7 @@ export default async function NuevoTurnoPage() {
     .order('apellido')
 
   return (
-    <div className="p-4 max-w-lg mx-auto">
+    <div className="p-4 md:pt-8 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-5">
         <Link href="/agenda" className="p-2 -ml-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -64,7 +64,7 @@ export default function AppShell({
       {/* Main content */}
       <main
         id="main-content"
-        className="min-h-screen flex flex-col pt-20 pb-0 px-4 md:pt-8 md:px-8 md:ml-[260px]"
+        className="flex flex-col min-h-screen md:ml-[260px] pt-16 md:pt-0"
       >
         <div className="flex-1">
           {children}
