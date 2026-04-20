@@ -41,12 +41,6 @@ const MONTH_FULL: Record<string, string> = {
   '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre',
 }
 
-const MONTH_SHORT: Record<string, string> = {
-  '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr',
-  '05': 'May', '06': 'Jun', '07': 'Jul', '08': 'Ago',
-  '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic',
-}
-
 export default async function HistorialPage({ params }: { params: { id: string } }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -93,7 +87,6 @@ export default async function HistorialPage({ params }: { params: { id: string }
     montoImpago,
   }
 
-  // Map turnos by fecha_hora prefix for matching with notas
   const turnosById = new Map<string, TurnoRow>()
   for (const t of turnosList) turnosById.set(t.id, t)
 
@@ -101,7 +94,6 @@ export default async function HistorialPage({ params }: { params: { id: string }
   const totalNotas = notasList.length
   const turnosCount = turnosList.filter((t) => t.estado !== 'cancelado').length
 
-  // Group by month 'yyyy-MM'
   const grouped: Record<string, NotaClinica[]> = {}
   for (const nota of notasList) {
     const key = format(parseISO(nota.fecha), 'yyyy-MM')
@@ -110,7 +102,6 @@ export default async function HistorialPage({ params }: { params: { id: string }
   }
   const sortedMonths = Object.keys(grouped).sort().reverse()
 
-  // Compute session number per nota (chronological index across all notas)
   const chronological = [...notasList].sort((a, b) => (a.fecha + a.created_at).localeCompare(b.fecha + b.created_at))
   const sessionNoMap = new Map<string, number>()
   chronological.forEach((n, idx) => sessionNoMap.set(n.id, idx + 1))
@@ -126,22 +117,17 @@ export default async function HistorialPage({ params }: { params: { id: string }
       />
 
       {totalNotas === 0 ? (
-        <div className="mt-6 border border-dashed border-line rounded-klin-lg bg-white p-10 text-center">
-          <div className="w-14 h-14 rounded-klin-lg bg-surface-2 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-muted-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+        <div className="mt-6 border border-dashed border-outline-variant/30 rounded-xl bg-surface-container-lowest p-10 text-center">
+          <div className="w-14 h-14 rounded-xl bg-surface-container flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 28 }}>clinical_notes</span>
           </div>
-          <h3 className="text-[15px] font-medium text-ink mb-1">Todavía no hay notas para este paciente</h3>
-          <p className="text-[13px] text-muted mb-5">Las notas aparecen al marcar un turno como realizado o podés crearlas manualmente.</p>
+          <h3 className="text-[15px] font-bold text-on-surface mb-1 tracking-tight">Todavía no hay notas para este paciente</h3>
+          <p className="text-[13px] text-on-surface-variant mb-5">Las notas aparecen al marcar un turno como realizado o podés crearlas manualmente.</p>
           <Link
             href={`/pacientes/${params.id}/historial/nueva`}
-            className="klin-btn-primary inline-flex"
+            className="btn-primary inline-flex"
           >
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
             Crear primera nota
           </Link>
         </div>
@@ -154,45 +140,46 @@ export default async function HistorialPage({ params }: { params: { id: string }
             return (
               <div key={monthKey}>
                 {/* Sticky month header */}
-                <div className="sticky top-0 z-[5] -mx-4 md:-mx-7 px-4 md:px-7 py-2 mb-1.5 flex items-baseline gap-2.5 bg-bgc/90 backdrop-blur-sm border-b border-dashed border-line">
-                  <span className="text-[11.5px] font-semibold uppercase text-ink-2" style={{ letterSpacing: '0.08em' }}>
+                <div className="sticky top-0 z-[5] -mx-4 md:-mx-7 px-4 md:px-7 py-2 mb-3 flex items-center gap-3 bg-surface/90 backdrop-blur-sm border-b border-outline-variant/20">
+                  <span className="text-[11px] font-extrabold uppercase text-slate-400 tracking-widest">
                     {monthLabel}
                   </span>
-                  <span className="text-[11.5px] text-muted-2">
+                  <span className="text-[11px] text-on-surface-variant">
                     {monthNotas.length} {monthNotas.length === 1 ? 'sesión' : 'sesiones'}
                   </span>
-                  <span className="flex-1 h-px bg-gradient-to-r from-line to-transparent" />
+                  <span className="flex-1 h-px bg-outline-variant/30" />
                 </div>
 
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-3">
                   {monthNotas.map((nota) => {
                     const fecha = parseISO(nota.fecha)
-                    const day = format(fecha, 'd').padStart(2, '0')
-                    const monthShort = MONTH_SHORT[format(fecha, 'MM')]
-                    const yearShort = format(fecha, 'yyyy')
-                    const time = format(parseISO(nota.created_at), 'HH:mm')
+                    const day = format(fecha, 'd')
+                    const monthShort = format(fecha, 'MMM', { locale: es }).replace('.', '')
                     const dow = format(fecha, 'EEEE', { locale: es })
+                    const time = format(parseISO(nota.created_at), 'HH:mm')
                     const title = primeraLinea(nota.contenido)
                     const excerpt = previewContenido(nota.contenido)
                     const tags = extraerTags(nota.contenido)
                     const sessionNo = sessionNoMap.get(nota.id) ?? 0
 
-                    // Derive chips from linked turno if exists
                     const turno = nota.turno_id ? turnosById.get(nota.turno_id) : null
                     const modalidad = turno?.modalidad
-                    const modalidadChip = modalidad === 'videollamada'
-                      ? { label: 'Virtual', cls: 'klin-chip klin-chip-online' }
-                      : modalidad === 'telefonica'
-                      ? { label: 'Telefónica', cls: 'klin-chip klin-chip-online' }
-                      : modalidad === 'presencial'
-                      ? { label: 'Presencial', cls: 'klin-chip klin-chip-in-person' }
+                    const modalidadLabel =
+                      modalidad === 'videollamada' ? 'Virtual'
+                      : modalidad === 'telefonica' ? 'Telefónica'
+                      : modalidad === 'presencial' ? 'Presencial'
                       : null
-                    const duracionChip = turno?.duracion_min ? `${turno.duracion_min} min` : null
-                    const estadoChip =
-                      turno?.estado === 'realizado' ? { label: 'Realizada', cls: 'klin-chip klin-chip-ok' }
-                      : turno?.estado === 'cancelado' ? { label: 'Cancelada', cls: 'klin-chip klin-chip-danger' }
-                      : turno?.estado === 'no_asistio' ? { label: 'No asistió', cls: 'klin-chip klin-chip-warn' }
+                    const duracionLabel = turno?.duracion_min ? `${turno.duracion_min} min` : null
+                    const estadoLabel =
+                      turno?.estado === 'realizado' ? 'Realizada'
+                      : turno?.estado === 'cancelado' ? 'Cancelada'
+                      : turno?.estado === 'no_asistio' ? 'No asistió'
                       : null
+                    const estadoColor =
+                      turno?.estado === 'realizado' ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant'
+                      : turno?.estado === 'cancelado' ? 'bg-error-container text-on-error-container'
+                      : turno?.estado === 'no_asistio' ? 'bg-surface-container text-on-surface-variant'
+                      : ''
 
                     return (
                       <Link
@@ -200,41 +187,53 @@ export default async function HistorialPage({ params }: { params: { id: string }
                         href={`/pacientes/${params.id}/historial/${nota.id}`}
                         className="block group"
                       >
-                        <article className="bg-white border border-line rounded-klin-lg px-4 sm:px-[18px] py-4 sm:py-[22px] grid gap-5 items-start transition-[border-color,box-shadow,transform] duration-150 group-hover:border-line-strong group-hover:shadow-klin-sm"
-                          style={{ gridTemplateColumns: '78px 1fr' }}
-                        >
+                        <article className="bg-white rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10 flex flex-col md:flex-row transition-all duration-150 group-hover:shadow-card group-hover:border-outline-variant/30">
                           {/* Date column */}
-                          <div className="text-left pt-0.5">
-                            <div className="text-ink font-semibold text-[26px] leading-none" style={{ letterSpacing: '-0.025em' }}>
-                              {day}
+                          <div className="md:w-32 bg-surface-container-low/40 p-5 flex-none flex flex-row md:flex-col items-center md:items-center justify-start md:justify-center gap-3 md:gap-0 md:text-center border-b md:border-b-0 md:border-r border-outline-variant/10">
+                            <div className="md:mb-1">
+                              <div className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 hidden md:block">{monthShort}</div>
+                              <div className="text-4xl font-extrabold text-primary leading-none">{day}</div>
+                              <div className="text-[10px] font-medium text-slate-400 capitalize mt-1 hidden md:block">{dow}</div>
                             </div>
-                            <div className="text-[11px] text-muted uppercase font-medium mt-1" style={{ letterSpacing: '0.06em' }}>
-                              {monthShort} · {yearShort}
-                            </div>
-                            <div className="font-mono text-[12px] text-muted-2 mt-[3px] tabular-nums">
-                              {time}
+                            <div className="md:mt-2">
+                              <span className="text-xs font-bold text-primary/60">{time}</span>
+                              <span className="md:hidden text-[10px] text-slate-400 ml-2 capitalize">{dow} {monthShort}</span>
                             </div>
                           </div>
 
-                          {/* Body */}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="text-[14px] font-semibold text-ink truncate" style={{ letterSpacing: '-0.005em' }}>
+                          {/* Content */}
+                          <div className="flex-1 p-5 md:p-6 min-w-0">
+                            <div className="flex items-start gap-2 mb-2 flex-wrap">
+                              <span className="text-[15px] font-extrabold text-primary tracking-tight leading-snug flex-1 min-w-0">
                                 {title}
                               </span>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1.5 mb-3">
                               {sessionNo > 0 && (
-                                <span className="font-mono text-[11.5px] text-muted-2">
-                                  #{String(sessionNo).padStart(3, '0')}
+                                <span className="bg-primary-fixed text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                  Sesión #{String(sessionNo).padStart(3, '0')}
                                 </span>
                               )}
-                              {modalidadChip && <span className={modalidadChip.cls}>{modalidadChip.label}</span>}
-                              {duracionChip && <span className="klin-chip">{duracionChip}</span>}
-                              {estadoChip && <span className={estadoChip.cls}>{estadoChip.label}</span>}
-                              <span className="ml-auto capitalize text-[11.5px] text-muted-2 hidden sm:inline">{dow}</span>
+                              {modalidadLabel && (
+                                <span className="bg-secondary-container text-on-secondary-container text-[10px] px-2.5 py-0.5 rounded-full font-bold">
+                                  {modalidadLabel}
+                                </span>
+                              )}
+                              {duracionLabel && (
+                                <span className="bg-surface-container text-on-surface-variant text-[10px] px-2.5 py-0.5 rounded-full font-bold">
+                                  {duracionLabel}
+                                </span>
+                              )}
+                              {estadoLabel && (
+                                <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${estadoColor}`}>
+                                  {estadoLabel}
+                                </span>
+                              )}
                             </div>
 
                             <p
-                              className="text-muted text-[13px] leading-[1.55] mb-2 overflow-hidden"
+                              className="text-[13px] text-slate-500 leading-relaxed border-l-4 border-primary/20 pl-3 mb-3 overflow-hidden"
                               style={{
                                 display: '-webkit-box',
                                 WebkitLineClamp: 2,
@@ -246,17 +245,37 @@ export default async function HistorialPage({ params }: { params: { id: string }
                             </p>
 
                             {tags.length > 0 && (
-                              <div className="flex flex-wrap gap-[5px]">
+                              <div className="flex flex-wrap gap-1.5">
                                 {tags.map((t) => (
                                   <span
                                     key={t}
-                                    className="text-[11px] text-muted px-[7px] py-[1px] rounded-[4px] border border-line bg-white font-medium before:content-['#'] before:text-muted-3 before:mr-0.5"
+                                    className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-medium"
                                   >
-                                    {t}
+                                    #{t}
                                   </span>
                                 ))}
                               </div>
                             )}
+                          </div>
+
+                          {/* Right panel */}
+                          <div className="md:w-44 bg-surface-container-lowest/50 border-t md:border-t-0 md:border-l border-outline-variant/10 p-5 flex flex-row md:flex-col items-center md:items-start justify-between md:justify-center gap-3 flex-none">
+                            <div className="hidden md:flex flex-col gap-1">
+                              {turno?.estado === 'realizado' && (
+                                <span className="flex items-center gap-1.5 text-[11px] font-bold text-on-tertiary-container">
+                                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check_circle</span>
+                                  Sesión realizada
+                                </span>
+                              )}
+                              {turno?.monto && (
+                                <span className="text-[11px] text-on-surface-variant font-medium">
+                                  {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(turno.monto)}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-bold text-primary bg-primary-fixed/30 hover:bg-primary-fixed rounded-lg px-3 py-1.5 transition-colors whitespace-nowrap group-hover:bg-primary-fixed">
+                              Ver nota completa
+                            </span>
                           </div>
                         </article>
                       </Link>

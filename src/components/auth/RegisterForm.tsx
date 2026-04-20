@@ -182,7 +182,7 @@ export default function RegisterForm() {
 
       <p className="text-center text-sm text-gray-600">
         ¿Ya tenés cuenta?{' '}
-        <Link href="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+        <Link href="/login" className="text-primary hover:text-primary-container font-medium">
           Iniciá sesión
         </Link>
       </p>

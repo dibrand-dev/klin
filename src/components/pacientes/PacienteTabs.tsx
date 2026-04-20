@@ -34,7 +34,7 @@ export default function PacienteTabs({
   ]
 
   return (
-    <div className="flex items-center gap-0.5 border-b border-line mt-7 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 flex-nowrap whitespace-nowrap">
+    <div className="flex items-center gap-0.5 border-b border-outline-variant/20 mb-8 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 flex-nowrap whitespace-nowrap">
       {tabs.map((tab) => {
         const isActive = tab.key === active
         const href =
@@ -50,18 +50,20 @@ export default function PacienteTabs({
             key={tab.key}
             href={href}
             className={cn(
-              'inline-flex items-center gap-[7px] px-3.5 py-2.5 text-[13.5px] font-medium border-b-2 -mb-px transition-colors select-none flex-shrink-0',
+              'inline-flex items-center gap-[7px] px-3.5 py-2.5 text-[13px] font-bold border-b-2 -mb-px transition-colors select-none flex-shrink-0',
               isActive
-                ? 'text-ink border-ink'
-                : 'text-muted border-transparent hover:text-ink-2',
+                ? 'text-primary border-primary'
+                : 'text-slate-400 border-transparent hover:text-slate-600',
             )}
           >
             {tab.label}
             {tab.badge !== undefined && tab.badge > 0 && (
               <span
                 className={cn(
-                  'text-[11px] px-1.5 py-[1px] rounded-full font-medium',
-                  isActive ? 'bg-ink text-white' : 'bg-surface-3 text-muted',
+                  'text-[10px] px-2 py-0.5 rounded-full font-bold',
+                  isActive
+                    ? 'bg-primary-container text-white'
+                    : 'bg-surface-container text-on-surface-variant',
                 )}
               >
                 {tab.badge}

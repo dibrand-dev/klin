@@ -258,7 +258,7 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
               <Link
                 href={`/pacientes/${turno.paciente_id}/historial`}
                 onClick={() => { setModo('ver'); setRealizandoExito(false); onClose() }}
-                className="inline-flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium"
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary-container font-medium"
               >
                 Ver nota en historial →
               </Link>
@@ -328,7 +328,7 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setModo('editar')}
-            className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-primary hover:bg-primary-fixed/20 rounded-lg transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -349,10 +349,10 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
           <p className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1">Paciente</p>
           {paciente ? (
             <Link href={`/pacientes/${turno.paciente_id}`} onClick={onClose} className="group inline-flex items-center gap-1.5">
-              <p className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+              <p className="text-lg font-semibold text-gray-900 group-hover:text-primary transition-colors">
                 {formatNombreCompleto(paciente.nombre, paciente.apellido)}
               </p>
-              <svg className="w-4 h-4 text-gray-400 group-hover:text-primary-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-gray-400 group-hover:text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>

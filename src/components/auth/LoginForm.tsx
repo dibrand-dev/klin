@@ -85,7 +85,7 @@ export default function LoginForm() {
 
       <p className="text-center text-sm text-gray-600">
         ¿No tenés cuenta?{' '}
-        <Link href="/registro" className="text-primary-600 hover:text-primary-700 font-medium">
+        <Link href="/registro" className="text-primary hover:text-primary-container font-medium">
           Registrate gratis
         </Link>
       </p>

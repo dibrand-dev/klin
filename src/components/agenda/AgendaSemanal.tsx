@@ -117,7 +117,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
         {HORAS.map((hora) => (
           <div
             key={hora}
-            className="h-16 border-b border-gray-100 hover:bg-primary-50/30 cursor-pointer transition-colors"
+            className="h-16 border-b border-gray-100 hover:bg-primary-fixed/20 cursor-pointer transition-colors"
             onClick={() => {
               const f = new Date(dia)
               f.setHours(hora, 0, 0, 0)
@@ -184,7 +184,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
                 {format(diaActual, "d 'de' MMMM", { locale: es })}
               </p>
               {isToday(diaActual) && (
-                <span className="text-[10px] bg-primary-600 text-white px-1.5 py-0.5 rounded-full leading-none">
+                <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded-full leading-none">
                   Hoy
                 </span>
               )}
@@ -309,14 +309,14 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
                 <div key={dia.toISOString()} className="flex-1 min-w-0 border-r border-gray-200 last:border-r-0">
                   <div className={cn(
                     'h-14 border-b border-gray-200 flex flex-col items-center justify-center sticky top-0 z-10 bg-white',
-                    esHoy && 'bg-primary-50'
+                    esHoy && 'bg-primary-fixed/20'
                   )}>
-                    <span className={cn('text-xs font-medium uppercase tracking-wider', esHoy ? 'text-primary-600' : 'text-gray-500')}>
+                    <span className={cn('text-xs font-medium uppercase tracking-wider', esHoy ? 'text-primary' : 'text-gray-500')}>
                       {format(dia, 'EEE', { locale: es })}
                     </span>
                     <span className={cn(
                       'text-lg font-semibold mt-0.5',
-                      esHoy ? 'w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm' : 'text-gray-900'
+                      esHoy ? 'w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm' : 'text-gray-900'
                     )}>
                       {format(dia, 'd')}
                     </span>

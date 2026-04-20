@@ -2,73 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
 @layer base {
-  html {
-    font-family: 'Inter', system-ui, sans-serif;
-  }
-
+  html { font-family: 'Inter', system-ui, sans-serif; }
   body {
-    @apply bg-bgc text-ink antialiased;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
-    font-size: 14px;
-    line-height: 1.45;
+    background-color: #f7f9fb;
+    color: #191c1e;
+    -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    overflow-x: hidden;
   }
-
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-thumb { background: #E3E6EC; border-radius: 10px; border: 2px solid #FBFBFC; }
-  ::-webkit-scrollbar-thumb:hover { background: #C8CDD6; }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-family: 'Material Symbols Outlined';
+    font-size: 24px;
+    line-height: 1;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #c4c6d2; border-radius: 6px; }
+  ::-webkit-scrollbar-thumb:hover { background: #747782; }
 }
 
 @layer components {
+  /* Sidebar layout */
+  #sidebar {
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sidebar-label {
+    transition: opacity 0.15s ease;
+    white-space: nowrap;
+  }
+  body.sidebar-collapsed #sidebar { width: 72px; }
+  body.sidebar-collapsed .sidebar-label { opacity: 0; pointer-events: none; display: none; }
+  body.sidebar-collapsed #sidebar .sidebar-header-info { display: none; }
+  body.sidebar-collapsed #sidebar .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+  @media (max-width: 768px) {
+    #sidebar { transform: translateX(-100%); width: 280px !important; z-index: 100; }
+    body.mobile-sidebar-open #sidebar { transform: translateX(0); }
+    .sidebar-label { display: block !important; opacity: 1 !important; }
+    body.sidebar-collapsed #sidebar .sidebar-header-info { display: block; }
+    body.sidebar-collapsed #sidebar .nav-item { justify-content: flex-start; padding-left: 12px; padding-right: 12px; }
+  }
+
+  /* KV grid for data display */
+  .kv { display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; font-size: 13.5px; }
+  .kv dt { color: #64748b; font-weight: 450; }
+  .kv dd { margin: 0; color: #1e293b; font-weight: 500; }
+  .tel { color: #1F4FD9; text-decoration: none; border-bottom: 1px dashed rgba(31,79,217,0.4); }
+  .tel:hover { border-bottom-style: solid; }
+
+  /* Legacy component classes — keep working for auth + agenda */
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-primary hover:bg-primary-container text-white font-semibold px-4 py-2 rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2;
   }
-
   .btn-secondary {
-    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg border border-gray-300 transition-colors duration-200;
+    @apply bg-white hover:bg-surface-container-low text-on-surface font-medium px-4 py-2 rounded-xl border border-outline-variant transition-colors duration-200 inline-flex items-center justify-center gap-2;
   }
-
   .btn-danger {
-    @apply bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200;
+    @apply bg-error hover:opacity-90 text-on-error font-semibold px-4 py-2 rounded-xl transition-colors duration-200;
   }
-
   .input-field {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow;
+    @apply w-full px-3 py-2 border border-outline-variant rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-shadow bg-white;
   }
-
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200;
-  }
-
-  /* KLIN design components */
-  .klin-btn {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] border border-line bg-white text-ink-2 text-[13px] font-medium shadow-klin-sm hover:bg-surface-2 transition-colors whitespace-nowrap;
-  }
-  .klin-btn-primary {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-ink text-white text-[13px] font-medium shadow-klin-sm hover:bg-black transition-colors whitespace-nowrap border border-ink;
-  }
-  .klin-btn-ghost {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] text-ink-2 text-[13px] font-medium hover:bg-surface-2 transition-colors whitespace-nowrap;
-  }
-  .klin-chip {
-    @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-surface-3 text-muted border border-transparent;
-  }
-  .klin-chip-in-person {
-    @apply bg-accent-soft text-accent-ink;
-  }
-  .klin-chip-online {
-    @apply bg-violet-soft text-violet;
-  }
-  .klin-chip-ok {
-    @apply bg-ok-soft text-ok;
-  }
-  .klin-chip-warn {
-    @apply bg-warn-soft text-warn;
-  }
-  .klin-chip-danger {
-    @apply bg-danger-soft text-danger;
+    @apply bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20;
   }
 }
