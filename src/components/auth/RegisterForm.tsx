@@ -1,17 +1,47 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
+const ESPECIALIDADES = [
+  'Acompañamiento Terapéutico',
+  'Administración de Salud',
+  'Cardiología',
+  'Clínica Médica',
+  'Dermatología',
+  'Endocrinología',
+  'Estimulación Temprana',
+  'Fisiatría',
+  'Fonoaudiología',
+  'Gastroenterología',
+  'Ginecología y Obstetricia',
+  'Kinesiología',
+  'Medicina de Familia',
+  'Musicoterapia',
+  'Neurología',
+  'Neuropsicología',
+  'Nutrición',
+  'Oftalmología',
+  'Pediatría',
+  'Psicología',
+  'Psicopedagogía',
+  'Psiquiatría',
+  'Psiquiatría Infanto-Juvenil',
+  'Secretariado Médico',
+  'Terapia Ocupacional',
+  'Traumatología',
+  'Urología',
+  'Otro / No listado',
+]
+
 export default function RegisterForm() {
-  const router = useRouter()
   const [form, setForm] = useState({
     nombre: '',
     apellido: '',
     email: '',
+    especialidad: '',
     password: '',
     confirmPassword: '',
   })
@@ -19,7 +49,7 @@ export default function RegisterForm() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
@@ -31,7 +61,6 @@ export default function RegisterForm() {
       setError('Las contraseñas no coinciden')
       return
     }
-
     if (form.password.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres')
       return
@@ -40,18 +69,22 @@ export default function RegisterForm() {
     setLoading(true)
     const supabase = createClient()
 
-    const { error } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
-        data: { nombre: form.nombre, apellido: form.apellido },
+        data: {
+          nombre: form.nombre,
+          apellido: form.apellido,
+          especialidad: form.especialidad || null,
+        },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
 
-    if (error) {
+    if (signUpError) {
       setError(
-        error.message.includes('already registered')
+        signUpError.message.includes('already registered')
           ? 'Ese email ya está registrado. ¿Querés iniciar sesión?'
           : 'Error al crear la cuenta. Intentá de nuevo.'
       )
@@ -97,14 +130,9 @@ export default function RegisterForm() {
             Nombre
           </label>
           <input
-            id="nombre"
-            name="nombre"
-            type="text"
-            value={form.nombre}
-            onChange={handleChange}
-            required
-            placeholder="María"
-            className="input-field"
+            id="nombre" name="nombre" type="text"
+            value={form.nombre} onChange={handleChange}
+            required placeholder="María" className="input-field"
           />
         </div>
         <div>
@@ -112,16 +140,27 @@ export default function RegisterForm() {
             Apellido
           </label>
           <input
-            id="apellido"
-            name="apellido"
-            type="text"
-            value={form.apellido}
-            onChange={handleChange}
-            required
-            placeholder="García"
-            className="input-field"
+            id="apellido" name="apellido" type="text"
+            value={form.apellido} onChange={handleChange}
+            required placeholder="García" className="input-field"
           />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="especialidad" className="block text-sm font-medium text-gray-700 mb-1">
+          Especialidad
+        </label>
+        <select
+          id="especialidad" name="especialidad"
+          value={form.especialidad} onChange={handleChange}
+          required className="input-field"
+        >
+          <option value="">Seleccioná tu especialidad...</option>
+          {ESPECIALIDADES.map((esp) => (
+            <option key={esp} value={esp}>{esp}</option>
+          ))}
+        </select>
       </div>
 
       <div>
@@ -129,14 +168,9 @@ export default function RegisterForm() {
           Email profesional
         </label>
         <input
-          id="email"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          required
-          placeholder="tu@email.com"
-          className="input-field"
+          id="email" name="email" type="email"
+          value={form.email} onChange={handleChange}
+          required placeholder="tu@email.com" className="input-field"
         />
       </div>
 
@@ -145,14 +179,9 @@ export default function RegisterForm() {
           Contraseña
         </label>
         <input
-          id="password"
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          required
-          placeholder="Mínimo 8 caracteres"
-          className="input-field"
+          id="password" name="password" type="password"
+          value={form.password} onChange={handleChange}
+          required placeholder="Mínimo 8 caracteres" className="input-field"
         />
       </div>
 
@@ -161,14 +190,9 @@ export default function RegisterForm() {
           Confirmar contraseña
         </label>
         <input
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          value={form.confirmPassword}
-          onChange={handleChange}
-          required
-          placeholder="Repetí la contraseña"
-          className="input-field"
+          id="confirmPassword" name="confirmPassword" type="password"
+          value={form.confirmPassword} onChange={handleChange}
+          required placeholder="Repetí la contraseña" className="input-field"
         />
       </div>
 
