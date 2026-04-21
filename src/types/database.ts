@@ -349,7 +349,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_interconsultas: {
+        Args: { p_paciente_id: string }
+        Returns: Interconsulta[]
+      }
     }
     Enums: {
       estado_turno: 'cancelado' | 'confirmado' | 'no_asistio' | 'pendiente' | 'realizado'
@@ -372,4 +375,12 @@ export type MedicacionPaciente = Database['public']['Tables']['medicacion_pacien
 
 export interface Turno extends TurnoRow {
   paciente?: Paciente
+}
+
+export type Interconsulta = {
+  nombre: string
+  apellido: string
+  especialidad: string | null
+  telefono: string | null
+  email: string | null
 }
