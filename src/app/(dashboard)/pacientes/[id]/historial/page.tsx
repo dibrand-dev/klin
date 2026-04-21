@@ -107,13 +107,12 @@ export default async function HistorialPage({ params }: { params: { id: string }
   chronological.forEach((n, idx) => sessionNoMap.set(n.id, idx + 1))
 
   return (
-    <div className="mx-auto w-full max-w-[1240px] px-4 md:px-7 pb-20">
+    <div className="mx-auto w-full max-w-[1240px] px-4 md:px-7 pt-6 md:pt-8 pb-20">
       <PacienteHeader paciente={paciente} summary={summary} />
       <PacienteTabs
         pacienteId={paciente.id}
         active="historial"
         historialCount={totalNotas}
-        turnosCount={turnosCount}
       />
 
       {totalNotas === 0 ? (

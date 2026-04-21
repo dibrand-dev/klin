@@ -33,10 +33,12 @@ export default async function AgendaPage() {
   ])
 
   return (
-    <AgendaSemanal
-      turnosIniciales={(turnos ?? []) as unknown as Turno[]}
-      pacientes={pacientes ?? []}
-      terapeutaId={user.id}
-    />
+    <div className="pt-4 md:pt-8">
+      <AgendaSemanal
+        turnosIniciales={(turnos ?? []) as unknown as Turno[]}
+        pacientes={pacientes ?? []}
+        terapeutaId={user.id}
+      />
+    </div>
   )
 }

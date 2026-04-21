@@ -153,12 +153,13 @@ create trigger set_turnos_updated_at
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email, nombre, apellido)
+  insert into public.profiles (id, email, nombre, apellido, especialidad)
   values (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'nombre', ''),
-    coalesce(new.raw_user_meta_data->>'apellido', '')
+    coalesce(new.raw_user_meta_data->>'apellido', ''),
+    new.raw_user_meta_data->>'especialidad'
   );
   return new;
 end;

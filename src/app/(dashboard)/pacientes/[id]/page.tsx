@@ -17,7 +17,7 @@ export default async function PacienteDetallePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: paciente }, turnosRes, notasRes] = await Promise.all([
+  const [{ data: paciente }, turnosRes, notasRes, medicacionesRes] = await Promise.all([
     supabase
       .from('pacientes')
       .select('*')
@@ -35,6 +35,12 @@ export default async function PacienteDetallePage({
       .select('id', { count: 'exact', head: true })
       .eq('paciente_id', params.id)
       .eq('terapeuta_id', user.id),
+    supabase
+      .from('medicacion_paciente')
+      .select('*')
+      .eq('paciente_id', params.id)
+      .eq('terapeuta_id', user.id)
+      .order('created_at'),
   ])
 
   if (!paciente) notFound()
@@ -57,28 +63,34 @@ export default async function PacienteDetallePage({
   }
 
   const historialCount = notasRes.count || 0
+  const medicaciones = medicacionesRes.data ?? []
   const turnosCount = turnos.filter((t) => t.estado !== 'cancelado').length
 
   const tab: PacienteTabKey =
-    searchParams.tab === 'resumen' ||
-    searchParams.tab === 'turnos' ||
+    searchParams.tab === 'datos' ||
+    searchParams.tab === 'informes' ||
     searchParams.tab === 'documentos' ||
-    searchParams.tab === 'notas'
+    searchParams.tab === 'facturacion'
       ? searchParams.tab
-      : 'datos'
+      : 'resumen'
 
   const editMode = searchParams.edit === '1'
 
   return (
-    <div className="mx-auto w-full max-w-[1240px] px-4 md:px-7 pb-20">
+    <div className="mx-auto w-full max-w-[1240px] px-4 md:px-7 pt-6 md:pt-8 pb-20">
       <PacienteHeader paciente={paciente} summary={summary} />
       <PacienteTabs
         pacienteId={paciente.id}
         active={tab}
         historialCount={historialCount}
-        turnosCount={turnosCount}
       />
-      <PacienteDetalle paciente={paciente} activeTab={tab} initialEdit={editMode} />
+      <PacienteDetalle
+        paciente={paciente}
+        medicacionesIniciales={medicaciones}
+        activeTab={tab}
+        initialEdit={editMode}
+        key={editMode ? 'edit' : 'view'}
+      />
     </div>
   )
 }

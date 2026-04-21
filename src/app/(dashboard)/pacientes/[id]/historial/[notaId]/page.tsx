@@ -20,7 +20,7 @@ export default async function NotaDetallePage({ params }: { params: { id: string
   if (!nota) notFound()
 
   return (
-    <div className="p-4 max-w-lg mx-auto">
+    <div className="p-4 md:pt-8 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-5">
         <Link
           href={`/pacientes/${params.id}/historial`}

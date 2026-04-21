@@ -51,6 +51,22 @@ export type Database = {
           numero_afiliado: string | null
           notas: string | null
           activo: boolean
+          genero: string | null
+          nacionalidad: string | null
+          estado_civil: string | null
+          domicilio: string | null
+          ocupacion: string | null
+          contacto_emergencia_nombre: string | null
+          contacto_emergencia_telefono: string | null
+          plan_obra_social: string | null
+          numero_autorizacion: string | null
+          modalidad_tratamiento: string | null
+          frecuencia_sesiones: string | null
+          honorarios: number | null
+          motivo_consulta: string | null
+          codigo_diagnostico: string | null
+          gravedad_estimada: string | null
+          fecha_inicio_tratamiento: string | null
           created_at: string
           updated_at: string
         }
@@ -67,6 +83,22 @@ export type Database = {
           numero_afiliado?: string | null
           notas?: string | null
           activo?: boolean
+          genero?: string | null
+          nacionalidad?: string | null
+          estado_civil?: string | null
+          domicilio?: string | null
+          ocupacion?: string | null
+          contacto_emergencia_nombre?: string | null
+          contacto_emergencia_telefono?: string | null
+          plan_obra_social?: string | null
+          numero_autorizacion?: string | null
+          modalidad_tratamiento?: string | null
+          frecuencia_sesiones?: string | null
+          honorarios?: number | null
+          motivo_consulta?: string | null
+          codigo_diagnostico?: string | null
+          gravedad_estimada?: string | null
+          fecha_inicio_tratamiento?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -83,6 +115,22 @@ export type Database = {
           numero_afiliado?: string | null
           notas?: string | null
           activo?: boolean
+          genero?: string | null
+          nacionalidad?: string | null
+          estado_civil?: string | null
+          domicilio?: string | null
+          ocupacion?: string | null
+          contacto_emergencia_nombre?: string | null
+          contacto_emergencia_telefono?: string | null
+          plan_obra_social?: string | null
+          numero_autorizacion?: string | null
+          modalidad_tratamiento?: string | null
+          frecuencia_sesiones?: string | null
+          honorarios?: number | null
+          motivo_consulta?: string | null
+          codigo_diagnostico?: string | null
+          gravedad_estimada?: string | null
+          fecha_inicio_tratamiento?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -217,6 +265,85 @@ export type Database = {
           },
         ]
       }
+      objetivos_terapeuticos: {
+        Row: {
+          id: string
+          terapeuta_id: string
+          paciente_id: string
+          descripcion: string
+          logrado: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          terapeuta_id: string
+          paciente_id: string
+          descripcion: string
+          logrado?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          terapeuta_id?: string
+          paciente_id?: string
+          descripcion?: string
+          logrado?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'objetivos_terapeuticos_paciente_id_fkey'
+            columns: ['paciente_id']
+            isOneToOne: false
+            referencedRelation: 'pacientes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      medicacion_paciente: {
+        Row: {
+          id: string
+          terapeuta_id: string
+          paciente_id: string
+          nombre: string
+          dosis: string | null
+          frecuencia: string | null
+          prescriptor: string | null
+          activa: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          terapeuta_id: string
+          paciente_id: string
+          nombre: string
+          dosis?: string | null
+          frecuencia?: string | null
+          prescriptor?: string | null
+          activa?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          terapeuta_id?: string
+          paciente_id?: string
+          nombre?: string
+          dosis?: string | null
+          frecuencia?: string | null
+          prescriptor?: string | null
+          activa?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'medicacion_paciente_paciente_id_fkey'
+            columns: ['paciente_id']
+            isOneToOne: false
+            referencedRelation: 'pacientes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -240,6 +367,8 @@ export type TurnoRow = Database['public']['Tables']['turnos']['Row']
 export type EstadoTurno = Database['public']['Enums']['estado_turno']
 export type ModalidadTurno = Database['public']['Enums']['modalidad_turno']
 export type NotaClinica = Database['public']['Tables']['notas_clinicas']['Row']
+export type ObjetivoTerapeutico = Database['public']['Tables']['objetivos_terapeuticos']['Row']
+export type MedicacionPaciente = Database['public']['Tables']['medicacion_paciente']['Row']
 
 export interface Turno extends TurnoRow {
   paciente?: Paciente

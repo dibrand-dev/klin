@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
-
 @layer base {
   html { font-family: 'Inter', system-ui, sans-serif; }
   body {
@@ -30,22 +27,11 @@
 @layer components {
   /* Sidebar layout */
   #sidebar {
-    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .sidebar-label {
-    transition: opacity 0.15s ease;
-    white-space: nowrap;
-  }
-  body.sidebar-collapsed #sidebar { width: 72px; }
-  body.sidebar-collapsed .sidebar-label { opacity: 0; pointer-events: none; display: none; }
-  body.sidebar-collapsed #sidebar .sidebar-header-info { display: none; }
-  body.sidebar-collapsed #sidebar .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
   @media (max-width: 768px) {
     #sidebar { transform: translateX(-100%); width: 280px !important; z-index: 100; }
     body.mobile-sidebar-open #sidebar { transform: translateX(0); }
-    .sidebar-label { display: block !important; opacity: 1 !important; }
-    body.sidebar-collapsed #sidebar .sidebar-header-info { display: block; }
-    body.sidebar-collapsed #sidebar .nav-item { justify-content: flex-start; padding-left: 12px; padding-right: 12px; }
   }
 
   /* KV grid for data display */
@@ -55,7 +41,6 @@
   .tel { color: #1F4FD9; text-decoration: none; border-bottom: 1px dashed rgba(31,79,217,0.4); }
   .tel:hover { border-bottom-style: solid; }
 
-  /* Legacy component classes — keep working for auth + agenda */
   .btn-primary {
     @apply bg-primary hover:bg-primary-container text-white font-semibold px-4 py-2 rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2;
   }
