@@ -398,6 +398,62 @@ export type Database = {
         }
         Relationships: []
       }
+      planes: {
+        Row: {
+          id: string
+          nombre: string
+          descripcion: string | null
+          precio_mensual: number
+          es_publico: boolean
+          es_ilimitado: boolean
+          activo: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nombre: string
+          descripcion?: string | null
+          precio_mensual?: number
+          es_publico?: boolean
+          es_ilimitado?: boolean
+          activo?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nombre?: string
+          descripcion?: string | null
+          precio_mensual?: number
+          es_publico?: boolean
+          es_ilimitado?: boolean
+          activo?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      plan_funcionalidades: {
+        Row: {
+          plan_id: string
+          funcionalidad: string
+        }
+        Insert: {
+          plan_id: string
+          funcionalidad: string
+        }
+        Update: {
+          plan_id?: string
+          funcionalidad?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'plan_funcionalidades_plan_id_fkey'
+            columns: ['plan_id']
+            isOneToOne: false
+            referencedRelation: 'planes'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -436,6 +492,12 @@ export type ObjetivoTerapeutico = Database['public']['Tables']['objetivos_terape
 export type MedicacionPaciente = Database['public']['Tables']['medicacion_paciente']['Row']
 export type AdminUser = Database['public']['Tables']['admin_users']['Row']
 export type Configuracion = Database['public']['Tables']['configuracion']['Row']
+export type Plan = Database['public']['Tables']['planes']['Row']
+export type PlanFuncionalidad = Database['public']['Tables']['plan_funcionalidades']['Row']
+
+export type PlanConFuncionalidades = Plan & {
+  plan_funcionalidades: { funcionalidad: string }[]
+}
 
 export interface Turno extends TurnoRow {
   paciente?: Paciente
