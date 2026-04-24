@@ -9,9 +9,10 @@ type Props = {
   onOmitir: () => void
   onCancelar: () => void
   loading?: boolean
+  sinFechasValidas?: boolean
 }
 
-export default function ConflictosPanel({ conflictos, onOmitir, onCancelar, loading }: Props) {
+export default function ConflictosPanel({ conflictos, onOmitir, onCancelar, loading, sinFechasValidas }: Props) {
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
       <div>
@@ -26,7 +27,13 @@ export default function ConflictosPanel({ conflictos, onOmitir, onCancelar, load
           ))}
         </ul>
       </div>
-      <p className="text-xs text-amber-700 font-medium">¿Qué querés hacer con esas fechas?</p>
+      {sinFechasValidas ? (
+        <p className="text-xs text-amber-800 font-medium">
+          Todas las fechas tienen conflicto. No se puede crear la serie sin revisar el horario.
+        </p>
+      ) : (
+        <p className="text-xs text-amber-700 font-medium">¿Qué querés hacer con esas fechas?</p>
+      )}
       <div className="flex gap-2">
         <button
           type="button"
@@ -34,16 +41,18 @@ export default function ConflictosPanel({ conflictos, onOmitir, onCancelar, load
           disabled={loading}
           className="btn-secondary flex-1 py-2 text-sm"
         >
-          Cancelar y revisar
+          {sinFechasValidas ? 'Volver a editar' : 'Cancelar y revisar'}
         </button>
-        <button
-          type="button"
-          onClick={onOmitir}
-          disabled={loading}
-          className="btn-primary flex-1 py-2 text-sm"
-        >
-          {loading ? 'Creando...' : 'Crear serie omitiendo conflictos'}
-        </button>
+        {!sinFechasValidas && (
+          <button
+            type="button"
+            onClick={onOmitir}
+            disabled={loading}
+            className="btn-primary flex-1 py-2 text-sm"
+          >
+            {loading ? 'Creando...' : 'Crear serie omitiendo conflictos'}
+          </button>
+        )}
       </div>
     </div>
   )

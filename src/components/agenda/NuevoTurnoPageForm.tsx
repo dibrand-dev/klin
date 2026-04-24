@@ -74,7 +74,7 @@ export default function NuevoTurnoPageForm({ pacientes, terapeutaId }: NuevoTurn
       new Date(y, m - 1, d), new Date(yf, mf - 1, df), supabase
     )
     await crearSerieTurnos(serieId, terapeutaId, form.paciente_id, fechas,
-      form.hora, Number(form.duracion_min), form.monto ? Number(form.monto) : null, supabase)
+      form.hora, Number(form.duracion_min), form.modalidad, form.monto ? Number(form.monto) : null, supabase)
     router.push('/agenda')
     router.refresh()
   }
@@ -160,6 +160,7 @@ export default function NuevoTurnoPageForm({ pacientes, terapeutaId }: NuevoTurn
             onOmitir={handleOmitirConflictos}
             onCancelar={() => setMostrandoConflictos(false)}
             loading={loading}
+            sinFechasValidas={fechasValidas.length === 0}
           />
         </div>
       ) : (

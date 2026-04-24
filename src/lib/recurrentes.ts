@@ -153,6 +153,7 @@ export async function crearSerieTurnos(
   fechas: Date[],
   hora: string,
   duracion: number,
+  modalidad: string,
   monto: number | null,
   supabase: any
 ): Promise<void> {
@@ -164,6 +165,7 @@ export async function crearSerieTurnos(
     paciente_id: pacienteId,
     fecha_hora: combineDateAndTime(fecha, hora).toISOString(),
     duracion_min: duracion,
+    modalidad,
     monto,
     estado: 'pendiente' as const,
     pagado: false,
