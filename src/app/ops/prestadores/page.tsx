@@ -1,8 +1,7 @@
 import { requireAdminUser } from '@/lib/ops/auth'
 import { createClient } from '@/lib/supabase/server'
-import { format, parseISO } from 'date-fns'
-import { es } from 'date-fns/locale'
 import Link from 'next/link'
+import PrestadoresTable from '@/components/ops/PrestadoresTable'
 
 export const metadata = { title: 'Prestadores — Klia Ops' }
 
@@ -63,66 +62,7 @@ export default async function PrestadoresPage({
 
       {/* Tabla */}
       <div className="bg-white rounded-2xl border border-outline-variant/20 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-outline-variant/10 bg-surface-container-lowest">
-                <th className="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Profesional</th>
-                <th className="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Especialidad</th>
-                <th className="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Plan</th>
-                <th className="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Estado</th>
-                <th className="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Registro</th>
-                <th className="text-left px-6 py-3 text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">Último acceso</th>
-                <th className="px-6 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(prestadores ?? []).map((p) => (
-                <tr key={p.id} className="border-b border-outline-variant/5 hover:bg-surface-container-lowest transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-on-surface">{p.nombre} {p.apellido}</p>
-                    <p className="text-xs text-on-surface-variant">{p.email}</p>
-                  </td>
-                  <td className="px-6 py-4 text-on-surface-variant">{p.especialidad ?? '—'}</td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-surface-container font-medium text-on-surface-variant">
-                      —
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-green-50 text-green-700 font-semibold">
-                      Activo
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-on-surface-variant whitespace-nowrap">
-                    {format(parseISO(p.created_at), 'd MMM yyyy', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 text-on-surface-variant whitespace-nowrap">
-                    {p.last_sign_in_at
-                      ? format(parseISO(p.last_sign_in_at), 'dd/MM/yy HH:mm:ss')
-                      : '—'}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <Link
-                      href={`/ops/prestadores/${p.id}`}
-                      className="text-sm text-primary font-medium hover:underline"
-                    >
-                      Ver
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {(prestadores ?? []).length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center text-on-surface-variant">
-                    <span className="material-symbols-outlined text-4xl opacity-20 mb-3 block">search_off</span>
-                    <p>No se encontraron prestadores.</p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <PrestadoresTable prestadores={prestadores ?? []} />
       </div>
     </div>
   )
