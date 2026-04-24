@@ -6,7 +6,7 @@ import { format, addMonths } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import type { Paciente, ModalidadTurno } from '@/types/database'
+import type { Paciente, Turno, ModalidadTurno } from '@/types/database'
 import type { ConflictoDetallado } from '@/lib/recurrentes'
 import { DIAS_SEMANA } from '@/lib/recurrentes'
 import MontoInput from '@/components/ui/MontoInput'
@@ -23,6 +23,9 @@ const MODALIDADES: { value: ModalidadTurno; label: string }[] = [
 interface NuevoTurnoPageFormProps {
   pacientes: Paciente[]
   terapeutaId: string
+  fechaInicial?: Date
+  onCreado?: (turno: Turno) => void
+  onClose?: () => void
 }
 
 function diaDeFecha(fechaStr: string): number {
@@ -30,12 +33,18 @@ function diaDeFecha(fechaStr: string): number {
   return new Date(y, m - 1, d).getDay()
 }
 
-export default function NuevoTurnoPageForm({ pacientes, terapeutaId }: NuevoTurnoPageFormProps) {
+export default function NuevoTurnoPageForm({
+  pacientes, terapeutaId, fechaInicial, onCreado, onClose,
+}: NuevoTurnoPageFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const fechaParam = searchParams.get('fecha') ?? format(new Date(), 'yyyy-MM-dd')
-  const horaParam = searchParams.get('hora') ?? '09:00'
+  const fechaParam = fechaInicial
+    ? format(fechaInicial, 'yyyy-MM-dd')
+    : (searchParams.get('fecha') ?? format(new Date(), 'yyyy-MM-dd'))
+  const horaParam = fechaInicial
+    ? format(fechaInicial, 'HH:mm')
+    : (searchParams.get('hora') ?? '09:00')
 
   const [form, setForm] = useState({
     paciente_id: '',
@@ -75,8 +84,13 @@ export default function NuevoTurnoPageForm({ pacientes, terapeutaId }: NuevoTurn
     )
     await crearSerieTurnos(serieId, terapeutaId, form.paciente_id, fechas,
       form.hora, Number(form.duracion_min), form.modalidad, form.monto ? Number(form.monto) : null, supabase)
-    router.push('/agenda')
-    router.refresh()
+    if (onClose) {
+      router.refresh()
+      onClose()
+    } else {
+      router.push('/agenda')
+      router.refresh()
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -112,16 +126,20 @@ export default function NuevoTurnoPageForm({ pacientes, terapeutaId }: NuevoTurn
     }
 
     const supabase = createClient()
-    const { error: dbError } = await supabase.from('turnos').insert({
-      terapeuta_id: terapeutaId,
-      paciente_id: form.paciente_id,
-      fecha_hora: new Date(`${form.fecha}T${form.hora}:00`).toISOString(),
-      duracion_min: Number(form.duracion_min),
-      modalidad: form.modalidad,
-      estado: 'pendiente',
-      monto: form.monto ? Number(form.monto) : null,
-      notas: form.notas || null,
-    })
+    const { data, error: dbError } = await supabase
+      .from('turnos')
+      .insert({
+        terapeuta_id: terapeutaId,
+        paciente_id: form.paciente_id,
+        fecha_hora: new Date(`${form.fecha}T${form.hora}:00`).toISOString(),
+        duracion_min: Number(form.duracion_min),
+        modalidad: form.modalidad,
+        estado: 'pendiente',
+        monto: form.monto ? Number(form.monto) : null,
+        notas: form.notas || null,
+      })
+      .select('*, paciente:pacientes(*)')
+      .single()
 
     if (dbError) {
       setError('Error al crear el turno. Intentá de nuevo.')
@@ -129,8 +147,12 @@ export default function NuevoTurnoPageForm({ pacientes, terapeutaId }: NuevoTurn
       return
     }
 
-    router.push('/agenda')
-    router.refresh()
+    if (onCreado && data) {
+      onCreado(data as unknown as Turno)
+    } else {
+      router.push('/agenda')
+      router.refresh()
+    }
   }
 
   async function handleOmitirConflictos() {
@@ -278,7 +300,11 @@ export default function NuevoTurnoPageForm({ pacientes, terapeutaId }: NuevoTurn
           </div>
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={() => router.back()} className="btn-secondary flex-1 py-3">
+            <button
+              type="button"
+              onClick={() => onClose ? onClose() : router.back()}
+              className="btn-secondary flex-1 py-3"
+            >
               Cancelar
             </button>
             <button type="submit" disabled={loading} className={cn('btn-primary flex-1 py-3', loading && 'opacity-70')}>

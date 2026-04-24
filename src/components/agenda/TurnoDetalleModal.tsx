@@ -11,6 +11,7 @@ import {
 } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { Turno, EstadoTurno, TurnoRecurrente } from '@/types/database'
+import SlideOver from '@/components/ui/SlideOver'
 import { DIAS_SEMANA } from '@/lib/recurrentes'
 import type { ConflictoDetallado } from '@/lib/recurrentes'
 import MontoInput from '@/components/ui/MontoInput'
@@ -18,6 +19,7 @@ import ConflictosPanel from './ConflictosPanel'
 
 interface TurnoDetalleModalProps {
   turno: Turno
+  open?: boolean
   onClose: () => void
   onTurnoActualizado: (turno: Turno) => void
   onEliminar: (id: string) => void
@@ -34,26 +36,26 @@ const MODALIDAD_ICON: Record<string, string> = {
 
 type Modo = 'ver' | 'editar' | 'cancelando' | 'realizando'
 
-function ModalShell({ children, onBackdropClick }: { children: React.ReactNode; onBackdropClick: () => void }) {
+function ModalShell({ children, open, onClose, title, subtitle }: {
+  children: React.ReactNode
+  open: boolean
+  onClose: () => void
+  title: string
+  subtitle?: string
+}) {
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/50" onClick={onBackdropClick} />
-      <div className="absolute inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center md:p-4 pointer-events-none">
-        <div
-          className="relative pointer-events-auto bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-sm overflow-y-auto overscroll-contain"
-          style={{ maxHeight: '92dvh' }}
-        >
-          {children}
-        </div>
-      </div>
-    </div>
+    <SlideOver open={open} onClose={onClose} title={title} subtitle={subtitle}>
+      {children}
+    </SlideOver>
   )
 }
 
-export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, onEliminar }: TurnoDetalleModalProps) {
+export default function TurnoDetalleModal({ turno, open = true, onClose, onTurnoActualizado, onEliminar }: TurnoDetalleModalProps) {
   const router = useRouter()
   const paciente = turno.paciente
   const fecha = parseISO(turno.fecha_hora)
+  const slTitle = paciente ? formatNombreCompleto(paciente.nombre, paciente.apellido) : 'Sin paciente'
+  const slSubtitle = format(fecha, "EEEE d 'de' MMMM · HH:mm hs", { locale: es })
 
   const [modo, setModo] = useState<Modo>('ver')
   const [loading, setLoading] = useState(false)
@@ -306,7 +308,7 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
   // ─── Modo editar ───────────────────────────────────────────────
   if (modo === 'editar') {
     return (
-      <ModalShell onBackdropClick={() => setModo('ver')}>
+      <ModalShell open={open} onClose={onClose} title={slTitle} subtitle={slSubtitle}>
         <div className="flex items-center justify-between p-5 border-b border-gray-200">
           <h3 className="font-semibold text-gray-900">Editar turno</h3>
           <button onClick={() => setModo('ver')} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -371,7 +373,7 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
   // ─── Modo cancelando ──────────────────────────────────────────
   if (modo === 'cancelando') {
     return (
-      <ModalShell onBackdropClick={() => setModo('ver')}>
+      <ModalShell open={open} onClose={onClose} title={slTitle} subtitle={slSubtitle}>
         <div className="p-5 space-y-4">
           <div className="text-center">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -406,7 +408,7 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
   if (modo === 'realizando') {
     if (realizandoExito) {
       return (
-        <ModalShell onBackdropClick={() => { setModo('ver'); setRealizandoExito(false) }}>
+        <ModalShell open={open} onClose={onClose} title={slTitle} subtitle={slSubtitle}>
           <div className="p-5 space-y-4 text-center">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
               <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -438,7 +440,7 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
     }
 
     return (
-      <ModalShell onBackdropClick={() => setModo('ver')}>
+      <ModalShell open={open} onClose={onClose} title={slTitle} subtitle={slSubtitle}>
         <div className="p-5 space-y-4">
           <div>
             <h3 className="font-semibold text-gray-900">Marcar como realizado</h3>
@@ -474,7 +476,7 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
 
   // ─── Modo ver ─────────────────────────────────────────────────
   return (
-    <ModalShell onBackdropClick={onClose}>
+    <ModalShell open={open} onClose={onClose} title={slTitle} subtitle={slSubtitle}>
       <div className="flex items-center justify-between p-5 border-b border-gray-200">
         <div className="flex items-center gap-2 flex-wrap">
           <span className={cn('inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border', ESTADO_TURNO_COLORS[turno.estado])}>
