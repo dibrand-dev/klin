@@ -77,6 +77,9 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
   const [serieForm, setSerieForm] = useState({ diaSemana: 0, hora: '' })
   const [loadingSerie, setLoadingSerie] = useState(false)
   const [errorSerie, setErrorSerie] = useState<string | null>(null)
+  const [conflictosSerie, setConflictosSerie] = useState<ConflictoDetallado[]>([])
+  const [fechasValidasSerie, setFechasValidasSerie] = useState<Date[]>([])
+  const [mostrandoConflictosSerie, setMostrandoConflictosSerie] = useState(false)
 
   // Renovación de serie
   const [renovandoSerie, setRenovandoSerie] = useState(false)
@@ -112,7 +115,7 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
       if (fechas.length > 0) {
         await crearSerieTurnos(
           serieData.id, turno.terapeuta_id, turno.paciente_id,
-          fechas, serieData.hora, turno.duracion_min, serieData.monto, supabase
+          fechas, serieData.hora, turno.duracion_min, serieData.modalidad, serieData.monto, supabase
         )
       }
       setSerieData({ ...serieData, fecha_fin: finStr })
@@ -157,13 +160,12 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
     }
   }
 
-  async function confirmarCambioSerie() {
+  async function doAplicarCambioSerie(fechas: Date[]) {
     if (!serieData) return
     setLoadingSerie(true)
-    setErrorSerie(null)
     try {
       const supabase = createClient()
-      const { crearSerieTurnos, generarFechasSerie } = await import('@/lib/recurrentes')
+      const { crearSerieTurnos } = await import('@/lib/recurrentes')
 
       await supabase
         .from('turnos_recurrentes')
@@ -177,22 +179,47 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
         .in('estado', ['pendiente', 'confirmado'])
         .gte('fecha_hora', new Date().toISOString())
 
-      const [yf, mf, df] = serieData.fecha_fin.split('-').map(Number)
-      const fechas = generarFechasSerie(serieForm.diaSemana, new Date(), new Date(yf, mf - 1, df))
-
       if (fechas.length > 0) {
         await crearSerieTurnos(
           serieData.id, turno.terapeuta_id, turno.paciente_id,
-          fechas, serieForm.hora, turno.duracion_min, turno.monto, supabase
+          fechas, serieForm.hora, turno.duracion_min, serieData.modalidad, turno.monto, supabase
         )
       }
 
       setSerieData({ ...serieData, dia_semana: serieForm.diaSemana, hora: serieForm.hora })
       setEditandoSerie(false)
+      setMostrandoConflictosSerie(false)
       router.refresh()
     } catch {
       setErrorSerie('Error al actualizar la serie. Intentá de nuevo.')
     } finally {
+      setLoadingSerie(false)
+    }
+  }
+
+  async function confirmarCambioSerie() {
+    if (!serieData) return
+    setLoadingSerie(true)
+    setErrorSerie(null)
+    try {
+      const { generarFechasSerie, detectarConflictosDetallados } = await import('@/lib/recurrentes')
+      const supabase = createClient()
+      const [yf, mf, df] = serieData.fecha_fin.split('-').map(Number)
+      const fechas = generarFechasSerie(serieForm.diaSemana, new Date(), new Date(yf, mf - 1, df))
+      const conf = await detectarConflictosDetallados(
+        turno.terapeuta_id, fechas, serieForm.hora, turno.duracion_min, supabase, serieData.id
+      )
+      const validas = fechas.filter((f) => !conf.some((c) => c.fecha.getTime() === f.getTime()))
+      if (conf.length > 0) {
+        setConflictosSerie(conf)
+        setFechasValidasSerie(validas)
+        setMostrandoConflictosSerie(true)
+        setLoadingSerie(false)
+        return
+      }
+      await doAplicarCambioSerie(fechas)
+    } catch {
+      setErrorSerie('Error al actualizar la serie. Intentá de nuevo.')
       setLoadingSerie(false)
     }
   }
@@ -570,6 +597,14 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
               >
                 Cambiar día y horario de la serie
               </button>
+            ) : mostrandoConflictosSerie ? (
+              <ConflictosPanel
+                conflictos={conflictosSerie}
+                onOmitir={() => doAplicarCambioSerie(fechasValidasSerie)}
+                onCancelar={() => setMostrandoConflictosSerie(false)}
+                loading={loadingSerie}
+                sinFechasValidas={fechasValidasSerie.length === 0}
+              />
             ) : (
               <div className="space-y-3 pt-1">
                 {errorSerie && (
@@ -613,7 +648,7 @@ export default function TurnoDetalleModal({ turno, onClose, onTurnoActualizado, 
                     disabled={loadingSerie}
                     className={cn('btn-primary flex-1 py-2 text-xs', loadingSerie && 'opacity-70')}
                   >
-                    {loadingSerie ? 'Actualizando...' : 'Confirmar cambio'}
+                    {loadingSerie ? 'Verificando...' : 'Confirmar cambio'}
                   </button>
                 </div>
               </div>

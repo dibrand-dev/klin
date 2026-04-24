@@ -75,7 +75,7 @@ export default function NuevoTurnoModal({
       new Date(y, m - 1, d), new Date(yf, mf - 1, df), supabase
     )
     await crearSerieTurnos(serieId, terapeutaId, form.paciente_id, fechas,
-      form.hora, Number(form.duracion_min), form.monto ? Number(form.monto) : null, supabase)
+      form.hora, Number(form.duracion_min), form.modalidad, form.monto ? Number(form.monto) : null, supabase)
     router.refresh()
     onClose()
   }
