@@ -31,20 +31,7 @@ export default function LoginForm() {
       return
     }
 
-    // Check if user is an admin
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('activo')
-      .eq('email', email)
-      .eq('activo', true)
-      .maybeSingle()
-
-    if (adminUser) {
-      router.push('/ops/dashboard')
-    } else {
-      router.push('/agenda')
-    }
-    router.refresh()
+    router.push('/auth/redirect')
   }
 
   return (
