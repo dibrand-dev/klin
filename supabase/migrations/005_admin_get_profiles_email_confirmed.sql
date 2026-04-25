@@ -1,6 +1,8 @@
 -- Actualiza admin_get_profiles para incluir email_confirmed_at desde auth.users
 -- Permite distinguir cuentas pendientes de validación de email de cuentas activas
 
+DROP FUNCTION IF EXISTS public.admin_get_profiles(text);
+
 CREATE OR REPLACE FUNCTION public.admin_get_profiles(p_search text DEFAULT NULL)
 RETURNS TABLE (
   id               uuid,
