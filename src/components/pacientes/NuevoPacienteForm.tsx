@@ -83,7 +83,7 @@ function CurrencyInput({
 type MedicacionForm = { farmaco: string; dosis: string; frecuencia: string; prescriptor: string }
 const EMPTY_MED: MedicacionForm = { farmaco: '', dosis: '', frecuencia: '', prescriptor: '' }
 
-export default function NuevoPacienteForm({ terapeutaId }: { terapeutaId: string }) {
+export default function NuevoPacienteForm({ terapeutaId, obrasSociales = [] }: { terapeutaId: string; obrasSociales?: string[] }) {
   const router = useRouter()
   const [form, setForm] = useState(EMPTY_FORM)
   const [medicaciones, setMedicaciones] = useState<MedicacionForm[]>([])
@@ -370,7 +370,7 @@ export default function NuevoPacienteForm({ terapeutaId }: { terapeutaId: string
               <label className={labelCls}>Obra Social / Prepaga</label>
               <select name="obra_social" value={form.obra_social} onChange={handleObraChange} className={inputCls}>
                 <option value="">Sin obra social</option>
-                {OBRAS_SOCIALES_AR.map((o) => <option key={o} value={o}>{o}</option>)}
+                {Array.from(new Set([...OBRAS_SOCIALES_AR, ...obrasSociales])).sort().map((o) => <option key={o} value={o}>{o}</option>)}
                 <option value="Otra">Otra (no figura en la lista)</option>
               </select>
             </div>

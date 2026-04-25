@@ -9,5 +9,13 @@ export default async function NuevoPacientePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  return <NuevoPacienteForm terapeutaId={user.id} />
+  const { data: obrasSocialesDB } = await supabase
+    .from('obras_sociales')
+    .select('nombre')
+    .eq('validada', true)
+    .order('nombre')
+
+  const obrasSociales = (obrasSocialesDB ?? []).map((o) => o.nombre)
+
+  return <NuevoPacienteForm terapeutaId={user.id} obrasSociales={obrasSociales} />
 }

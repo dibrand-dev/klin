@@ -557,6 +557,10 @@ export type Database = {
         Args: { p_id: string }
         Returns: string | null
       }
+      admin_validar_pacientes_obra_social: {
+        Args: { p_nombre_original: string; p_nombre_final: string }
+        Returns: void
+      }
     }
     Enums: {
       estado_turno: 'cancelado' | 'confirmado' | 'no_asistio' | 'pendiente' | 'realizado'

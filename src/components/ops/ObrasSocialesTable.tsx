@@ -13,16 +13,10 @@ export default function ObrasSocialesTable({ obras }: { obras: ObraSocial[] }) {
 
   async function actualizarPacientes(nombreOriginal: string, nombreFinal: string) {
     const supabase = createClient()
-    await supabase
-      .from('pacientes')
-      .update({
-        obra_social: nombreFinal,
-        os_pendiente_validacion: false,
-        os_nombre_libre: null,
-        os_plan_libre: null,
-      })
-      .ilike('os_nombre_libre', nombreOriginal)
-      .eq('os_pendiente_validacion', true)
+    await supabase.rpc('admin_validar_pacientes_obra_social', {
+      p_nombre_original: nombreOriginal,
+      p_nombre_final: nombreFinal,
+    })
   }
 
   async function validar(obra: ObraSocial) {

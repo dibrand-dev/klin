@@ -105,12 +105,14 @@ export default function PacienteDetalle({
   interconsultas = [],
   initialEdit = false,
   activeTab = 'datos',
+  obrasSociales = [],
 }: {
   paciente: Paciente
   medicacionesIniciales?: MedicacionPaciente[]
   interconsultas?: Interconsulta[]
   initialEdit?: boolean
   activeTab?: PacienteTabKey
+  obrasSociales?: string[]
 }) {
   const router = useRouter()
   const [editando, setEditando] = useState(initialEdit)
@@ -402,7 +404,7 @@ export default function PacienteDetalle({
               <label className={labelCls}>Obra Social / Prepaga</label>
               <select name="obra_social" value={form.obra_social} onChange={handleObraChange} className={inputCls}>
                 <option value="">Sin obra social</option>
-                {OBRAS_SOCIALES_AR.map((o) => <option key={o} value={o}>{o}</option>)}
+                {Array.from(new Set([...OBRAS_SOCIALES_AR, ...obrasSociales])).sort().map((o) => <option key={o} value={o}>{o}</option>)}
                 <option value="Otra">Otra (no figura en la lista)</option>
               </select>
             </div>
