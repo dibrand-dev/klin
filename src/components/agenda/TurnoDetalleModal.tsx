@@ -23,6 +23,7 @@ interface TurnoDetalleModalProps {
   onClose: () => void
   onTurnoActualizado: (turno: Turno) => void
   onEliminar: (id: string) => void
+  onEliminarFuturos?: (turnoId: string, serieId: string, fechaHora: string) => Promise<void>
 }
 
 const ESTADOS_TRANSICION: EstadoTurno[] = ['pendiente', 'confirmado', 'realizado', 'no_asistio', 'cancelado']
@@ -50,7 +51,7 @@ function ModalShell({ children, open, onClose, title, subtitle }: {
   )
 }
 
-export default function TurnoDetalleModal({ turno, open = true, onClose, onTurnoActualizado, onEliminar }: TurnoDetalleModalProps) {
+export default function TurnoDetalleModal({ turno, open = true, onClose, onTurnoActualizado, onEliminar, onEliminarFuturos }: TurnoDetalleModalProps) {
   const router = useRouter()
   const paciente = turno.paciente
   const fecha = parseISO(turno.fecha_hora)
@@ -82,6 +83,10 @@ export default function TurnoDetalleModal({ turno, open = true, onClose, onTurno
   const [conflictosSerie, setConflictosSerie] = useState<ConflictoDetallado[]>([])
   const [fechasValidasSerie, setFechasValidasSerie] = useState<Date[]>([])
   const [mostrandoConflictosSerie, setMostrandoConflictosSerie] = useState(false)
+
+  // Eliminación inline
+  const [eliminando, setEliminando] = useState<'este' | 'futuros' | null>(null)
+  const [loadingEliminar, setLoadingEliminar] = useState(false)
 
   // Renovación de serie
   const [renovandoSerie, setRenovandoSerie] = useState(false)
@@ -743,17 +748,94 @@ export default function TurnoDetalleModal({ turno, open = true, onClose, onTurno
         </div>
       </div>
 
-      <div className="px-5 pb-5">
-        <button
-          onClick={() => {
-            if (confirm('¿Eliminás este turno? Esta acción no se puede deshacer.')) {
-              onEliminar(turno.id)
-            }
-          }}
-          className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 py-2 rounded-lg transition-colors"
-        >
-          Eliminar turno
-        </button>
+      <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-1">
+        {eliminando === null && (
+          <>
+            {turno.serie_recurrente_id ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEliminando('este')}
+                  className="w-full text-left text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors"
+                >
+                  Eliminar este turno
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEliminando('futuros')}
+                  className="w-full text-left text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors"
+                >
+                  Eliminar este y todos los futuros
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEliminando('este')}
+                className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 py-2 rounded-lg transition-colors"
+              >
+                Eliminar turno
+              </button>
+            )}
+          </>
+        )}
+
+        {eliminando === 'este' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-3">
+            <p className="text-sm text-red-700">
+              {turno.serie_recurrente_id
+                ? '¿Confirmás que querés eliminar este turno? La serie continúa normalmente.'
+                : '¿Confirmás que querés eliminar este turno? Esta acción no se puede deshacer.'}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setEliminando(null)}
+                className="btn-secondary flex-1 py-2 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => onEliminar(turno.id)}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {eliminando === 'futuros' && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-3">
+            <p className="text-sm text-red-700">
+              Se eliminará este turno y todos los turnos futuros de la serie con estado pendiente o confirmado. Los turnos ya realizados no se tocan.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setEliminando(null)}
+                disabled={loadingEliminar}
+                className="btn-secondary flex-1 py-2 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={loadingEliminar}
+                onClick={async () => {
+                  if (!turno.serie_recurrente_id || !onEliminarFuturos) return
+                  setLoadingEliminar(true)
+                  await onEliminarFuturos(turno.id, turno.serie_recurrente_id, turno.fecha_hora)
+                  setLoadingEliminar(false)
+                }}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-70"
+              >
+                {loadingEliminar ? 'Eliminando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </ModalShell>
   )

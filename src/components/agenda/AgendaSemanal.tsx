@@ -359,6 +359,30 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
             setTurnos((prev) => prev.filter((t) => t.id !== id))
             setTurnoSeleccionado(null)
           }}
+          onEliminarFuturos={async (turnoId, serieId, fechaHora) => {
+            const supabase = createClient()
+            await supabase
+              .from('turnos')
+              .delete()
+              .eq('serie_recurrente_id', serieId)
+              .gte('fecha_hora', fechaHora)
+              .in('estado', ['pendiente', 'confirmado'])
+            const { data: rest } = await supabase
+              .from('turnos')
+              .select('id')
+              .eq('serie_recurrente_id', serieId)
+              .gte('fecha_hora', new Date().toISOString())
+              .limit(1)
+            if (!rest || rest.length === 0) {
+              await supabase.from('turnos_recurrentes').update({ activo: false }).eq('id', serieId)
+            }
+            setTurnos((prev) => prev.filter((t) => {
+              if (t.serie_recurrente_id !== serieId) return true
+              if (new Date(t.fecha_hora) < new Date(fechaHora)) return true
+              return !['pendiente', 'confirmado'].includes(t.estado)
+            }))
+            setTurnoSeleccionado(null)
+          }}
         />
       )}
     </div>
