@@ -13,5 +13,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('id', user.id)
     .single()
 
+  if (!profile) redirect('/login')
+
+  // Auto-bloquear si el trial venció
+  if (profile.estado_cuenta === 'trial' && new Date(profile.trial_fin) < new Date()) {
+    await supabase.from('profiles').update({ estado_cuenta: 'bloqueada' }).eq('id', user.id)
+    redirect('/cuenta-bloqueada')
+  }
+
+  if (profile.estado_cuenta === 'bloqueada' || profile.estado_cuenta === 'cancelada') {
+    redirect('/cuenta-bloqueada')
+  }
+
   return <AppShell profile={profile}>{children}</AppShell>
 }

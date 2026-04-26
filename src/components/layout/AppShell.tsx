@@ -7,6 +7,23 @@ import type { Profile } from '@/types/database'
 import GlobalFooter from './GlobalFooter'
 import NavigationDrawer from './NavigationDrawer'
 
+function TrialBanner({ trialFin }: { trialFin: string }) {
+  const dias = Math.max(0, Math.ceil((new Date(trialFin).getTime() - Date.now()) / 86400000))
+  const urgente = dias <= 5
+
+  return (
+    <div className={`w-full text-center text-xs py-2 px-4 font-medium ${urgente ? 'bg-red-500 text-white' : 'bg-amber-400 text-amber-900'}`}>
+      {dias === 0
+        ? '⚠️ Tu período de prueba vence hoy. Activá tu suscripción para no perder el acceso.'
+        : `⏳ Período de prueba: ${dias} día${dias === 1 ? '' : 's'} restante${dias === 1 ? '' : 's'}.`}
+      {' '}
+      <a href="mailto:hola@klia.ar?subject=Quiero activar mi suscripción" className="underline font-semibold">
+        Activar suscripción
+      </a>
+    </div>
+  )
+}
+
 export default function AppShell({
   profile,
   children,
@@ -66,6 +83,9 @@ export default function AppShell({
         id="main-content"
         className="flex flex-col min-h-screen md:ml-[260px] pt-16 md:pt-0"
       >
+        {profile?.estado_cuenta === 'trial' && profile.trial_fin && (
+          <TrialBanner trialFin={profile.trial_fin} />
+        )}
         <div className="flex-1">
           {children}
         </div>
