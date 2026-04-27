@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import type { Profile } from '@/types/database'
+import { usePathname, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import type { Profile, Paciente } from '@/types/database'
 import GlobalFooter from './GlobalFooter'
 import NavigationDrawer from './NavigationDrawer'
+import SlideOver from '@/components/ui/SlideOver'
+import NuevoTurnoPageForm from '@/components/agenda/NuevoTurnoPageForm'
 
 function TrialBanner({ trialFin }: { trialFin: string }) {
   const dias = Math.max(0, Math.ceil((new Date(trialFin).getTime() - Date.now()) / 86400000))
@@ -32,7 +35,11 @@ export default function AppShell({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
+  const [pacientes, setPacientes] = useState<Paciente[]>([])
+  const [pacientesCargados, setPacientesCargados] = useState(false)
 
   useEffect(() => {
     if (mobileOpen) {
@@ -45,6 +52,21 @@ export default function AppShell({
   useEffect(() => {
     setMobileOpen(false)
   }, [pathname])
+
+  async function abrirNuevoTurno() {
+    if (!pacientesCargados && profile) {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('pacientes')
+        .select('*')
+        .eq('terapeuta_id', profile.id)
+        .eq('activo', true)
+        .order('apellido')
+      setPacientes(data ?? [])
+      setPacientesCargados(true)
+    }
+    setNuevoTurnoOpen(true)
+  }
 
   return (
     <>
@@ -76,7 +98,7 @@ export default function AppShell({
       )}
 
       {/* Navigation Drawer */}
-      <NavigationDrawer profile={profile} />
+      <NavigationDrawer profile={profile} onNuevaSesion={abrirNuevoTurno} />
 
       {/* Main content */}
       <main
@@ -93,12 +115,30 @@ export default function AppShell({
       </main>
 
       {/* Mobile FAB */}
-      <Link
-        href="/turnos/nuevo"
+      <button
+        onClick={abrirNuevoTurno}
         className="fixed bottom-8 right-8 h-14 w-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 md:hidden"
+        aria-label="Nueva sesión"
       >
         <span className="material-symbols-outlined">add</span>
-      </Link>
+      </button>
+
+      {/* SlideOver global de nuevo turno */}
+      <SlideOver
+        open={nuevoTurnoOpen}
+        onClose={() => setNuevoTurnoOpen(false)}
+        title="Nuevo turno"
+      >
+        <Suspense fallback={null}>
+          <NuevoTurnoPageForm
+            key={nuevoTurnoOpen ? 'open' : 'closed'}
+            pacientes={pacientes}
+            terapeutaId={profile?.id ?? ''}
+            onCreado={() => { setNuevoTurnoOpen(false); router.refresh() }}
+            onClose={() => setNuevoTurnoOpen(false)}
+          />
+        </Suspense>
+      </SlideOver>
     </>
   )
 }

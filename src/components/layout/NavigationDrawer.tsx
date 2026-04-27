@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { href: '/ajustes', label: 'Ajustes', icon: 'settings' },
 ]
 
-export default function NavigationDrawer({ profile }: { profile: Profile | null }) {
+export default function NavigationDrawer({ profile, onNuevaSesion }: { profile: Profile | null; onNuevaSesion: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -103,13 +103,13 @@ export default function NavigationDrawer({ profile }: { profile: Profile | null 
 
       {/* Action Button */}
       <div className="mt-8 mb-6">
-        <Link
-          href="/turnos/nuevo"
+        <button
+          onClick={onNuevaSesion}
           className="w-full bg-primary text-on-primary font-medium text-sm px-4 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary-container transition-colors duration-200 shadow-sm active:scale-[0.98]"
         >
           <span className="material-symbols-outlined text-xl">add</span>
           Nueva Sesión
-        </Link>
+        </button>
       </div>
 
       {/* Logout */}
