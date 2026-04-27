@@ -8,7 +8,8 @@ import { createClient } from '@/lib/supabase/client'
 import { cn, formatNombreCompleto } from '@/lib/utils'
 import type { Paciente, MedicacionPaciente, Interconsulta, ProfesionalObraSocial } from '@/types/database'
 import type { PacienteTabKey } from './PacienteTabs'
-import { PAISES, OBRAS_SOCIALES_AR, PLANES_POR_OS } from '@/lib/data/salud-ar'
+import { PAISES, PLANES_POR_OS } from '@/lib/data/salud-ar'
+import { OBRAS_SOCIALES } from '@/lib/obras-sociales'
 
 const inputCls =
   'w-full bg-surface-container-high border border-outline-variant/15 text-on-surface rounded-lg px-4 py-3 text-sm focus:bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none'
@@ -468,7 +469,7 @@ export default function PacienteDetalle({
                   <label className={labelCls}>Obra Social / Prepaga</label>
                   <select name="obra_social" value={form.obra_social} onChange={handleObraChange} className={inputCls}>
                     <option value="">Sin obra social</option>
-                    {Array.from(new Set([...OBRAS_SOCIALES_AR, ...obrasSociales])).sort().map((o) => <option key={o} value={o}>{o}</option>)}
+                    {Array.from(new Set([...OBRAS_SOCIALES, ...obrasSociales])).sort().map((o) => <option key={o} value={o}>{o}</option>)}
                     <option value="Otra">Otra (no figura en la lista)</option>
                   </select>
                 </div>

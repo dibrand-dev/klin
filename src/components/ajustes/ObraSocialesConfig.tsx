@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { ProfesionalObraSocial } from '@/types/database'
+import { OBRAS_SOCIALES } from '@/lib/obras-sociales'
 import SlideOver from '@/components/ui/SlideOver'
 
 type FormOS = {
-  nombre: string
+  nombre: string      // valor del select (o '__otra__')
+  nombreLibre: string // texto libre cuando nombre === '__otra__'
   razon_social: string
   cuit_os: string
   domicilio_os: string
@@ -19,6 +21,7 @@ type FormOS = {
 
 const BLANK: FormOS = {
   nombre: '',
+  nombreLibre: '',
   razon_social: '',
   cuit_os: '',
   domicilio_os: '',
@@ -77,8 +80,10 @@ export default function ObraSocialesConfig({ initialList, terapeutaId }: {
 
   useEffect(() => {
     if (editing) {
+      const enLista = OBRAS_SOCIALES.includes(editing.nombre)
       setForm({
-        nombre: editing.nombre,
+        nombre: enLista ? editing.nombre : '__otra__',
+        nombreLibre: enLista ? '' : editing.nombre,
         razon_social: editing.razon_social ?? '',
         cuit_os: editing.cuit_os ?? '',
         domicilio_os: editing.domicilio_os ?? '',
@@ -97,20 +102,12 @@ export default function ObraSocialesConfig({ initialList, terapeutaId }: {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  function openNueva() {
-    setEditing(null)
-    setError(null)
-    setSlideOpen(true)
-  }
-
-  function openEditar(os: ProfesionalObraSocial) {
-    setEditing(os)
-    setError(null)
-    setSlideOpen(true)
-  }
+  function openNueva() { setEditing(null); setError(null); setSlideOpen(true) }
+  function openEditar(os: ProfesionalObraSocial) { setEditing(os); setError(null); setSlideOpen(true) }
 
   async function handleSave() {
-    if (!form.nombre.trim()) { setError('El nombre es obligatorio'); return }
+    const nombreFinal = form.nombre === '__otra__' ? form.nombreLibre.trim() : form.nombre
+    if (!nombreFinal) { setError('El nombre es obligatorio'); return }
     if (!form.honorario_por_sesion) { setError('El honorario es obligatorio'); return }
     setSaving(true)
     setError(null)
@@ -118,7 +115,7 @@ export default function ObraSocialesConfig({ initialList, terapeutaId }: {
     const honorario = parseFloat(form.honorario_por_sesion)
 
     const payload = {
-      nombre: form.nombre.trim(),
+      nombre: nombreFinal,
       razon_social: form.razon_social.trim() || null,
       cuit_os: form.cuit_os.trim() || null,
       domicilio_os: form.domicilio_os.trim() || null,
@@ -182,8 +179,29 @@ export default function ObraSocialesConfig({ initialList, terapeutaId }: {
 
           <div>
             <label className={labelCls}>Nombre de la obra social <span className="text-red-500">*</span></label>
-            <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Hospital Italiano, OSDE..." className={inputCls} />
+            <select name="nombre" value={form.nombre} onChange={handleChange} className={inputCls}>
+              <option value="">Seleccioná una obra social...</option>
+              {OBRAS_SOCIALES.map(os => (
+                <option key={os} value={os}>{os}</option>
+              ))}
+              <option value="__otra__">Otra (escribir manualmente)</option>
+            </select>
           </div>
+
+          {form.nombre === '__otra__' && (
+            <div>
+              <label className={labelCls}>Escribí el nombre <span className="text-red-500">*</span></label>
+              <input
+                name="nombreLibre"
+                value={form.nombreLibre}
+                onChange={handleChange}
+                placeholder="Nombre de la obra social..."
+                className={inputCls}
+                autoFocus
+              />
+            </div>
+          )}
+
           <div>
             <label className={labelCls}>Razón social completa</label>
             <input name="razon_social" value={form.razon_social} onChange={handleChange} placeholder="Institución del Diagnóstico S.A." className={inputCls} />
