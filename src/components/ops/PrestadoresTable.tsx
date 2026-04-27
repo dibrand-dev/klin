@@ -318,19 +318,21 @@ export default function PrestadoresTable({ prestadores }: { prestadores: Profile
     const supabase = createClient()
     const id = deleteTarget.id
 
-    const { data: pacientes } = await supabase.from('pacientes').select('id').eq('terapeuta_id', id)
-    const pacienteIds = (pacientes ?? []).map((p) => p.id)
-
-    if (pacienteIds.length > 0) {
-      await supabase.from('notas_clinicas').delete().in('paciente_id', pacienteIds)
-      await supabase.from('objetivos_terapeuticos').delete().in('paciente_id', pacienteIds)
-      await supabase.from('medicacion_paciente').delete().in('paciente_id', pacienteIds)
-    }
+    await supabase.from('notas_clinicas').delete().eq('terapeuta_id', id)
     await supabase.from('turnos').delete().eq('terapeuta_id', id)
     await supabase.from('pacientes').delete().eq('terapeuta_id', id)
     await supabase.from('profiles').delete().eq('id', id)
 
+    const res = await fetch(`/api/ops/prestadores/${id}`, { method: 'DELETE' })
     const name = `${deleteTarget.nombre} ${deleteTarget.apellido}`
+
+    if (!res.ok) {
+      const { error } = await res.json()
+      setDeleting(false)
+      showToast(`Error al eliminar usuario: ${error}`, 'error')
+      return
+    }
+
     setRows((prev) => prev.filter((r) => r.id !== id))
     setDeleteTarget(null)
     setDeleting(false)
