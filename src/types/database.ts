@@ -10,7 +10,7 @@ export type Database = {
           matricula: string | null
           especialidad: string | null
           telefono: string | null
-          plan: 'esencial' | 'profesional' | 'premium'
+          plan: 'esencial' | 'profesional' | 'premium' | 'bonificado'
           estado_cuenta: 'trial' | 'activa' | 'bloqueada' | 'cancelada'
           trial_inicio: string
           trial_fin: string
@@ -29,7 +29,7 @@ export type Database = {
           matricula?: string | null
           especialidad?: string | null
           telefono?: string | null
-          plan?: 'esencial' | 'profesional' | 'premium'
+          plan?: 'esencial' | 'profesional' | 'premium' | 'bonificado'
           estado_cuenta?: 'trial' | 'activa' | 'bloqueada' | 'cancelada'
           trial_inicio?: string
           trial_fin?: string
@@ -48,7 +48,7 @@ export type Database = {
           matricula?: string | null
           especialidad?: string | null
           telefono?: string | null
-          plan?: 'esencial' | 'profesional' | 'premium'
+          plan?: 'esencial' | 'profesional' | 'premium' | 'bonificado'
           estado_cuenta?: 'trial' | 'activa' | 'bloqueada' | 'cancelada'
           trial_inicio?: string
           trial_fin?: string
@@ -798,7 +798,7 @@ export type ProfileWithLastSignIn = {
   created_at: string
   last_sign_in_at: string | null
   email_confirmed_at: string | null
-  plan: 'esencial' | 'profesional' | 'premium'
+  plan: 'esencial' | 'profesional' | 'premium' | 'bonificado'
   estado_cuenta: 'trial' | 'activa' | 'bloqueada' | 'cancelada'
   trial_fin: string
   suscripcion_fin: string | null

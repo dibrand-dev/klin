@@ -10,7 +10,7 @@ import type { ProfileWithLastSignIn } from '@/types/database'
 import SlideOver from '@/components/ui/SlideOver'
 
 type EstadoCuenta = 'trial' | 'activa' | 'bloqueada' | 'cancelada'
-type Plan = 'esencial' | 'profesional' | 'premium'
+type Plan = 'esencial' | 'profesional' | 'premium' | 'bonificado'
 type Row = ProfileWithLastSignIn
 
 // ─── Badges ────────────────────────────────────────────────────────────────
@@ -44,9 +44,10 @@ function PlanBadge({ plan }: { plan: Plan }) {
     esencial: 'bg-surface-container text-on-surface-variant',
     profesional: 'bg-blue-50 text-blue-700',
     premium: 'bg-purple-50 text-purple-700',
+    bonificado: 'bg-emerald-50 text-emerald-700',
   }
   return (
-    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold capitalize ${styles[plan]}`}>
+    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold capitalize ${styles[plan] ?? 'bg-gray-100 text-gray-600'}`}>
       {plan}
     </span>
   )
@@ -181,10 +182,19 @@ function SuscripcionPanel({ prestador, onClose, onSaved }: {
 
           <div>
             <label className={labelCls}>Plan</label>
-            <select value={plan} onChange={(e) => setPlan(e.target.value as Plan)} className={selectCls}>
+            <select
+              value={plan}
+              onChange={(e) => {
+                const p = e.target.value as Plan
+                setPlan(p)
+                if (p === 'bonificado' && estado === 'trial') setEstado('activa')
+              }}
+              className={selectCls}
+            >
               <option value="esencial">Esencial</option>
               <option value="profesional">Profesional</option>
               <option value="premium">Premium</option>
+              <option value="bonificado">Bonificado</option>
             </select>
           </div>
 
