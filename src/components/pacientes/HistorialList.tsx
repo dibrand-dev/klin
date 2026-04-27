@@ -43,12 +43,14 @@ type Props = {
 export default function HistorialList({ notas, turnos, pacienteId }: Props) {
   const [selectedNota, setSelectedNota] = useState<NotaClinica | null>(null)
 
-  // Keep selectedNota in sync after router.refresh() updates the notas prop
+  // Sync selectedNota when notas prop updates after router.refresh().
+  // selectedNota omitted intentionally — adding it would cause an infinite loop.
   useEffect(() => {
     if (selectedNota) {
       const updated = notas.find((n) => n.id === selectedNota.id)
       if (updated) setSelectedNota(updated)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notas])
 
   const turnosById = new Map<string, TurnoRow>()
