@@ -83,9 +83,9 @@ export default function AppShell({
         id="main-content"
         className="flex flex-col min-h-screen md:ml-[260px] pt-16 md:pt-0"
       >
-        {profile?.estado_cuenta === 'trial' && profile.trial_fin && (
-          <TrialBanner trialFin={profile.trial_fin} />
-        )}
+        {profile?.estado_cuenta === 'trial' && profile.trial_fin
+          ? <TrialBanner trialFin={profile.trial_fin} />
+          : null}
         <div className="flex-1">
           {children}
         </div>

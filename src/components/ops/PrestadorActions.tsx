@@ -2,9 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { Plan } from '@/types/database'
+
+async function patchProfile(id: string, body: Record<string, unknown>) {
+  const res = await fetch(`/api/ops/prestadores/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.error ?? 'Error al guardar')
+  }
+}
 
 export default function PrestadorActions({
   profileId,
@@ -31,52 +42,60 @@ export default function PrestadorActions({
     setTimeout(() => setMsg(null), 4000)
   }
 
-  async function handleSuspender() {
-    if (!suspendConfirm) { setSuspendConfirm(true); return }
-    setLoading('suspend')
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('profiles')
-      .update({ estado_cuenta: 'bloqueada' })
-      .eq('id', profileId)
-    if (error) { feedback('err', error.message); setLoading(null); return }
-    setSuspendConfirm(false)
-    setLoading(null)
-    feedback('ok', `${profileName} suspendido correctamente`)
-    router.refresh()
-  }
-
   async function handleCambiarPlan() {
     if (!plan) return
     setLoading('plan')
-    const supabase = createClient()
     const planNombre = planes.find((p) => p.id === plan)?.nombre?.toLowerCase() ?? ''
-    const updates: Record<string, unknown> = { plan: planNombre }
-    if (estadoCuenta === 'trial') updates.estado_cuenta = 'activa'
-    const { error } = await supabase.from('profiles').update(updates).eq('id', profileId)
-    if (error) { feedback('err', error.message); setLoading(null); return }
-    setPlan('')
-    setLoading(null)
-    feedback('ok', `Plan cambiado a "${planNombre}"`)
-    router.refresh()
+    try {
+      await patchProfile(profileId, {
+        plan: planNombre,
+        estado_cuenta: 'activa',
+        trial_fin: null,
+      })
+      setPlan('')
+      feedback('ok', `Plan cambiado a "${planNombre}"`)
+      router.refresh()
+    } catch (e) {
+      feedback('err', (e as Error).message)
+    } finally {
+      setLoading(null)
+    }
   }
 
   async function handleExtenderPrueba() {
     const dias = Number(diasPrueba)
     if (!dias || isNaN(dias)) return
     setLoading('prueba')
-    const supabase = createClient()
     const base = trialFin && new Date(trialFin) > new Date() ? new Date(trialFin) : new Date()
     base.setDate(base.getDate() + dias)
-    const { error } = await supabase
-      .from('profiles')
-      .update({ trial_fin: base.toISOString(), estado_cuenta: 'trial' })
-      .eq('id', profileId)
-    if (error) { feedback('err', error.message); setLoading(null); return }
-    setDiasPrueba('')
-    setLoading(null)
-    feedback('ok', `Período de prueba extendido ${dias} días`)
-    router.refresh()
+    try {
+      await patchProfile(profileId, {
+        trial_fin: base.toISOString(),
+        estado_cuenta: 'trial',
+      })
+      setDiasPrueba('')
+      feedback('ok', `Período de prueba extendido ${dias} días`)
+      router.refresh()
+    } catch (e) {
+      feedback('err', (e as Error).message)
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  async function handleSuspender() {
+    if (!suspendConfirm) { setSuspendConfirm(true); return }
+    setLoading('suspend')
+    try {
+      await patchProfile(profileId, { estado_cuenta: 'bloqueada' })
+      setSuspendConfirm(false)
+      feedback('ok', `${profileName} suspendido correctamente`)
+      router.refresh()
+    } catch (e) {
+      feedback('err', (e as Error).message)
+    } finally {
+      setLoading(null)
+    }
   }
 
   return (
@@ -136,7 +155,7 @@ export default function PrestadorActions({
           </button>
         </div>
 
-        {/* Suspender / Reactivar */}
+        {/* Suspender */}
         <div className="border border-outline-variant/20 rounded-xl p-4">
           <p className="text-xs font-semibold text-on-surface-variant mb-3 uppercase tracking-wide">Cuenta</p>
           <p className="text-xs text-on-surface-variant mb-3">
@@ -150,18 +169,13 @@ export default function PrestadorActions({
               disabled={loading === 'suspend'}
               className={cn(
                 'flex-1 text-sm py-2 rounded-xl font-semibold transition-colors',
-                suspendConfirm
-                  ? 'bg-error text-on-error hover:opacity-90'
-                  : 'btn-secondary'
+                suspendConfirm ? 'bg-error text-on-error hover:opacity-90' : 'btn-secondary'
               )}
             >
-              {suspendConfirm ? 'Sí, suspender' : 'Suspender'}
+              {loading === 'suspend' ? 'Guardando...' : suspendConfirm ? 'Sí, suspender' : 'Suspender'}
             </button>
             {suspendConfirm && (
-              <button
-                onClick={() => setSuspendConfirm(false)}
-                className="btn-secondary flex-1 text-sm py-2"
-              >
+              <button onClick={() => setSuspendConfirm(false)} className="btn-secondary flex-1 text-sm py-2">
                 Cancelar
               </button>
             )}
