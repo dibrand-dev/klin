@@ -94,6 +94,9 @@ export type Database = {
           os_nombre_libre: string | null
           os_plan_libre: string | null
           os_pendiente_validacion: boolean
+          os_config_id: string | null
+          autorizacion_vigencia_desde: string | null
+          autorizacion_vigencia_hasta: string | null
           created_at: string
           updated_at: string
         }
@@ -129,6 +132,9 @@ export type Database = {
           os_nombre_libre?: string | null
           os_plan_libre?: string | null
           os_pendiente_validacion?: boolean
+          os_config_id?: string | null
+          autorizacion_vigencia_desde?: string | null
+          autorizacion_vigencia_hasta?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -164,6 +170,9 @@ export type Database = {
           os_nombre_libre?: string | null
           os_plan_libre?: string | null
           os_pendiente_validacion?: boolean
+          os_config_id?: string | null
+          autorizacion_vigencia_desde?: string | null
+          autorizacion_vigencia_hasta?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -564,6 +573,155 @@ export type Database = {
           },
         ]
       }
+      profesional_obras_sociales: {
+        Row: {
+          id: string
+          terapeuta_id: string
+          nombre: string
+          cuit_os: string | null
+          razon_social: string | null
+          domicilio_os: string | null
+          condicion_iva_os: string
+          condicion_venta: string
+          codigo_practica: string | null
+          descripcion_practica: string | null
+          honorario_por_sesion: number | null
+          activa: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          terapeuta_id: string
+          nombre: string
+          cuit_os?: string | null
+          razon_social?: string | null
+          domicilio_os?: string | null
+          condicion_iva_os?: string
+          condicion_venta?: string
+          codigo_practica?: string | null
+          descripcion_practica?: string | null
+          honorario_por_sesion?: number | null
+          activa?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          terapeuta_id?: string
+          nombre?: string
+          cuit_os?: string | null
+          razon_social?: string | null
+          domicilio_os?: string | null
+          condicion_iva_os?: string
+          condicion_venta?: string
+          codigo_practica?: string | null
+          descripcion_practica?: string | null
+          honorario_por_sesion?: number | null
+          activa?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      os_honorarios_historial: {
+        Row: {
+          id: string
+          os_config_id: string
+          honorario: number
+          vigente_desde: string
+          vigente_hasta: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          os_config_id: string
+          honorario: number
+          vigente_desde?: string
+          vigente_hasta?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          os_config_id?: string
+          honorario?: number
+          vigente_desde?: string
+          vigente_hasta?: string | null
+        }
+        Relationships: []
+      }
+      liquidaciones: {
+        Row: {
+          id: string
+          terapeuta_id: string
+          os_config_id: string
+          periodo_mes: number
+          periodo_anio: number
+          estado: 'borrador' | 'generada' | 'presentada' | 'cobrada'
+          total_sesiones: number
+          total_importe: number
+          excel_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          terapeuta_id: string
+          os_config_id: string
+          periodo_mes: number
+          periodo_anio: number
+          estado?: 'borrador' | 'generada' | 'presentada' | 'cobrada'
+          total_sesiones?: number
+          total_importe?: number
+          excel_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          estado?: 'borrador' | 'generada' | 'presentada' | 'cobrada'
+          total_sesiones?: number
+          total_importe?: number
+          excel_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      liquidacion_items: {
+        Row: {
+          id: string
+          liquidacion_id: string
+          paciente_id: string
+          numero_afiliado: string | null
+          numero_autorizacion: string | null
+          cantidad_sesiones: number
+          honorario_unitario: number
+          importe_total: number
+          fecha_liquidacion: string
+          observaciones: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          liquidacion_id: string
+          paciente_id: string
+          numero_afiliado?: string | null
+          numero_autorizacion?: string | null
+          cantidad_sesiones: number
+          honorario_unitario: number
+          importe_total: number
+          fecha_liquidacion: string
+          observaciones?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          cantidad_sesiones?: number
+          honorario_unitario?: number
+          importe_total?: number
+          observaciones?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -610,6 +768,10 @@ export type TurnoRecurrente = Database['public']['Tables']['turnos_recurrentes']
 export type ObraSocial = Database['public']['Tables']['obras_sociales']['Row']
 export type Plan = Database['public']['Tables']['planes']['Row']
 export type PlanFuncionalidad = Database['public']['Tables']['plan_funcionalidades']['Row']
+export type ProfesionalObraSocial = Database['public']['Tables']['profesional_obras_sociales']['Row']
+export type OsHonorariosHistorial = Database['public']['Tables']['os_honorarios_historial']['Row']
+export type Liquidacion = Database['public']['Tables']['liquidaciones']['Row']
+export type LiquidacionItem = Database['public']['Tables']['liquidacion_items']['Row']
 
 export type PlanConFuncionalidades = Plan & {
   plan_funcionalidades: { funcionalidad: string }[]

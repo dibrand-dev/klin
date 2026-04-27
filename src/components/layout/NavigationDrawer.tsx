@@ -8,7 +8,10 @@ import type { Profile } from '@/types/database'
 const NAV_ITEMS = [
   { href: '/agenda', label: 'Agenda', icon: 'calendar_today' },
   { href: '/pacientes', label: 'Pacientes', icon: 'groups' },
-  { href: '/facturacion', label: 'Facturación', icon: 'payments' },
+  {
+    href: '/facturacion/liquidacion', label: 'Facturación', icon: 'payments',
+    children: [{ href: '/facturacion/liquidacion', label: 'Liquidación OS' }],
+  },
   { href: '/informes', label: 'Informes', icon: 'description' },
   { href: '/ajustes', label: 'Ajustes', icon: 'settings' },
 ]
@@ -62,7 +65,7 @@ export default function NavigationDrawer({ profile }: { profile: Profile | null 
       {/* Navigation Menu */}
       <ul className="flex flex-col gap-2 flex-1">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          const isActive = pathname === item.href || pathname.startsWith(item.href.split('/')[1] ? '/' + item.href.split('/')[1] : item.href)
           return (
             <li key={item.href}>
               <Link
@@ -82,6 +85,24 @@ export default function NavigationDrawer({ profile }: { profile: Profile | null 
                 </span>
                 <span className="text-sm">{item.label}</span>
               </Link>
+              {'children' in item && item.children && isActive && (
+                <ul className="ml-10 mt-1 space-y-1">
+                  {item.children.map(child => (
+                    <li key={child.href}>
+                      <Link
+                        href={child.href}
+                        className={`block text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                          pathname === child.href || pathname.startsWith(child.href)
+                            ? 'text-primary font-semibold'
+                            : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+                        }`}
+                      >
+                        {child.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           )
         })}
