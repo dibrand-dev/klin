@@ -201,6 +201,7 @@ export type Database = {
           motivo_cancelacion: string | null
           recordatorio_enviado: boolean
           serie_recurrente_id: string | null
+          google_event_id: string | null
           created_at: string
           updated_at: string
         }
@@ -218,6 +219,7 @@ export type Database = {
           motivo_cancelacion?: string | null
           recordatorio_enviado?: boolean
           serie_recurrente_id?: string | null
+          google_event_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -235,6 +237,7 @@ export type Database = {
           motivo_cancelacion?: string | null
           recordatorio_enviado?: boolean
           serie_recurrente_id?: string | null
+          google_event_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -722,6 +725,39 @@ export type Database = {
         }
         Relationships: []
       }
+      google_calendar_tokens: {
+        Row: {
+          id: string
+          terapeuta_id: string
+          access_token: string
+          refresh_token: string
+          token_expiry: string
+          calendar_id: string
+          sync_enabled: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          terapeuta_id: string
+          access_token: string
+          refresh_token: string
+          token_expiry: string
+          calendar_id?: string
+          sync_enabled?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          refresh_token?: string
+          token_expiry?: string
+          calendar_id?: string
+          sync_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suscripciones: {
         Row: {
           id: string
@@ -810,6 +846,7 @@ export type ProfesionalObraSocial = Database['public']['Tables']['profesional_ob
 export type OsHonorariosHistorial = Database['public']['Tables']['os_honorarios_historial']['Row']
 export type Liquidacion = Database['public']['Tables']['liquidaciones']['Row']
 export type LiquidacionItem = Database['public']['Tables']['liquidacion_items']['Row']
+export type GoogleCalendarToken = Database['public']['Tables']['google_calendar_tokens']['Row']
 
 export type PlanConFuncionalidades = Plan & {
   plan_funcionalidades: { funcionalidad: string }[]

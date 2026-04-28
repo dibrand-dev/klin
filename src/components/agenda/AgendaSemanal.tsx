@@ -21,10 +21,19 @@ const HORA_INICIO = 7
 const HORA_FIN = 21
 const HORAS = Array.from({ length: HORA_FIN - HORA_INICIO }, (_, i) => HORA_INICIO + i)
 
+type GoogleEventSerialized = {
+  id: string
+  titulo: string
+  inicio: string
+  fin: string
+}
+
 interface AgendaSemanalProps {
   turnosIniciales: Turno[]
   pacientes: Paciente[]
   terapeutaId: string
+  googleConnected?: boolean
+  googleEventsIniciales?: GoogleEventSerialized[]
 }
 
 function getTopOffset(fechaHora: string) {
@@ -36,15 +45,32 @@ function getHeight(min: number) {
   return min * (64 / 60)
 }
 
-export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId }: AgendaSemanalProps) {
+export default function AgendaSemanal({
+  turnosIniciales, pacientes, terapeutaId, googleConnected = false, googleEventsIniciales = [],
+}: AgendaSemanalProps) {
   const [semanaActual, setSemanaActual] = useState(new Date())
   const [diaActual, setDiaActual] = useState(new Date())
   const [turnos, setTurnos] = useState<Turno[]>(turnosIniciales)
+  const [googleEvents, setGoogleEvents] = useState<GoogleEventSerialized[]>(googleEventsIniciales)
   const [nuevoFecha, setNuevoFecha] = useState<Date>(new Date())
   const [nuevoOpen, setNuevoOpen] = useState(false)
   const [turnoSeleccionado, setTurnoSeleccionado] = useState<Turno | null>(null)
+  const [googleConflicto, setGoogleConflicto] = useState(false)
 
   function abrirNuevoTurno(fecha: Date) {
+    if (googleConnected) {
+      const fin = new Date(fecha.getTime() + 50 * 60000)
+      const hayConflicto = googleEvents.some((e) => {
+        const eI = new Date(e.inicio)
+        const eF = new Date(e.fin)
+        return eI < fin && eF > fecha
+      })
+      if (hayConflicto) {
+        setGoogleConflicto(true)
+        setTimeout(() => setGoogleConflicto(false), 3000)
+        return
+      }
+    }
     setNuevoFecha(fecha)
     setNuevoOpen(true)
   }
@@ -57,15 +83,22 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
     const inicio = startOfWeek(refDate, { weekStartsOn: 1 })
     const fin = endOfWeek(refDate, { weekStartsOn: 1 })
     const supabase = createClient()
-    const { data } = await supabase
+    const turnosPromise = supabase
       .from('turnos')
       .select('*, paciente:pacientes(*)')
       .eq('terapeuta_id', terapeutaId)
       .gte('fecha_hora', inicio.toISOString())
       .lte('fecha_hora', fin.toISOString())
       .order('fecha_hora')
+    const googlePromise = googleConnected
+      ? fetch(`/api/google-calendar/events?start=${inicio.toISOString()}&end=${fin.toISOString()}`)
+          .then((r) => r.json() as Promise<GoogleEventSerialized[]>)
+          .catch(() => [] as GoogleEventSerialized[])
+      : Promise.resolve([] as GoogleEventSerialized[])
+    const [{ data }, gEvents] = await Promise.all([turnosPromise, googlePromise])
     if (data) setTurnos(data as unknown as Turno[])
-  }, [terapeutaId])
+    setGoogleEvents(gEvents)
+  }, [terapeutaId, googleConnected])
 
   function navegarDia(dir: 1 | -1) {
     const nuevo = dir === 1 ? addDays(diaActual, 1) : subDays(diaActual, 1)
@@ -110,6 +143,7 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
   // ─── Columna de turnos reutilizable ──────────────────────────
   function ColumnaHoras({ dia, onCeldaClick }: { dia: Date; onCeldaClick: (f: Date) => void }) {
     const lista = getTurnosDelDia(dia)
+    const gEventsDia = googleEvents.filter((e) => isSameDay(new Date(e.inicio), dia))
     return (
       <div className="flex-1 relative">
         {HORAS.map((hora) => (
@@ -123,6 +157,24 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
             }}
           />
         ))}
+        {/* Eventos de Google Calendar */}
+        {gEventsDia.map((ev) => {
+          const inicio = new Date(ev.inicio)
+          const fin = new Date(ev.fin)
+          const top = ((inicio.getHours() - HORA_INICIO) * 60 + inicio.getMinutes()) * (64 / 60)
+          const durMin = (fin.getTime() - inicio.getTime()) / 60000
+          const height = Math.max(durMin * (64 / 60), 20)
+          return (
+            <div
+              key={ev.id}
+              className="absolute left-0.5 right-0.5 rounded-md px-2 py-1 text-xs overflow-hidden pointer-events-none border border-dashed border-gray-400 bg-gray-100/80"
+              style={{ top: `${top}px`, height: `${height}px` }}
+              title={`Google Calendar: ${ev.titulo}`}
+            >
+              <span className="text-gray-500 truncate block font-medium">{ev.titulo}</span>
+            </div>
+          )
+        })}
         {lista.map((turno) => {
           const top = getTopOffset(turno.fecha_hora)
           const height = Math.max(getHeight(turno.duracion_min), 28)
@@ -164,6 +216,11 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
 
   return (
     <div className="flex flex-col h-full">
+      {googleConflicto && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-gray-800 text-white text-sm px-5 py-3 rounded-xl shadow-lg">
+          Horario ocupado en Google Calendar
+        </div>
+      )}
 
       {/* ══════════════ MOBILE: Vista día ══════════════ */}
       <div className="flex flex-col h-full md:hidden">
@@ -354,12 +411,22 @@ export default function AgendaSemanal({ turnosIniciales, pacientes, terapeutaId 
           onClose={() => setTurnoSeleccionado(null)}
           onTurnoActualizado={actualizarTurno}
           onEliminar={async (id) => {
+            fetch('/api/google-calendar/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ turno_id: id, action: 'delete' }),
+            }).catch(() => {})
             const supabase = createClient()
             await supabase.from('turnos').delete().eq('id', id)
             setTurnos((prev) => prev.filter((t) => t.id !== id))
             setTurnoSeleccionado(null)
           }}
           onEliminarFuturos={async (turnoId, serieId, fechaHora) => {
+            fetch('/api/google-calendar/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ serie_id: serieId, desde_fecha: fechaHora, action: 'delete' }),
+            }).catch(() => {})
             const supabase = createClient()
             await supabase
               .from('turnos')

@@ -266,6 +266,11 @@ export default function TurnoDetalleModal({ turno, open = true, onClose, onTurno
       .update({ estado: 'cancelado', motivo_cancelacion: motivoCancelacion || null })
       .eq('id', turno.id)
     if (dbError) { setError('Error al cancelar.'); setLoading(false); return }
+    fetch('/api/google-calendar/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ turno_id: turno.id, action: 'delete' }),
+    }).catch(() => {})
     onTurnoActualizado({ ...turno, estado: 'cancelado', motivo_cancelacion: motivoCancelacion || null })
     setModo('ver')
     setLoading(false)

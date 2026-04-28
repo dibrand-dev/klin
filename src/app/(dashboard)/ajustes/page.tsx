@@ -25,6 +25,17 @@ export default async function AjustesPage() {
 
       <div className="mb-8 space-y-3">
         <Link
+          href="/ajustes/integraciones"
+          className="flex items-center gap-4 bg-white rounded-2xl border border-outline-variant/20 shadow-sm px-6 py-4 hover:border-primary/30 hover:shadow-md transition-all group"
+        >
+          <span className="material-symbols-outlined text-2xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>extension</span>
+          <div className="flex-1">
+            <p className="font-semibold text-sm text-on-surface">Integraciones</p>
+            <p className="text-xs text-on-surface-variant">Conectá KLIA con Google Calendar y otras herramientas</p>
+          </div>
+          <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+        </Link>
+        <Link
           href="/ajustes/suscripcion"
           className="flex items-center gap-4 bg-white rounded-2xl border border-outline-variant/20 shadow-sm px-6 py-4 hover:border-primary/30 hover:shadow-md transition-all group"
         >

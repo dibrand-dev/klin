@@ -85,6 +85,11 @@ export default function NuevoTurnoPageForm({
     )
     await crearSerieTurnos(serieId, terapeutaId, form.paciente_id, fechas,
       form.hora, Number(form.duracion_min), form.modalidad, form.monto ? Number(form.monto) : null, supabase)
+    fetch('/api/google-calendar/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ serie_id: serieId, action: 'create' }),
+    }).catch(() => {})
     if (onClose) {
       router.refresh()
       onClose()
@@ -149,6 +154,13 @@ export default function NuevoTurnoPageForm({
       return
     }
 
+    if (data?.id) {
+      fetch('/api/google-calendar/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ turno_id: data.id, action: 'create' }),
+      }).catch(() => {})
+    }
     if (onCreado && data) {
       onCreado(data as unknown as Turno)
     } else {
