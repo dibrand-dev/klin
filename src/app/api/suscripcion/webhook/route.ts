@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHmac } from 'crypto'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { preApproval } from '@/lib/mercadopago'
 import type { Database } from '@/types/database'
@@ -10,9 +11,35 @@ function serviceClient() {
   )
 }
 
+function verificarFirmaMP(req: NextRequest, rawBody: string): boolean {
+  const secret = process.env.MP_WEBHOOK_SECRET
+  if (!secret) return true // sin secret configurado, skip en desarrollo local
+
+  const xSignature = req.headers.get('x-signature')
+  const xRequestId = req.headers.get('x-request-id')
+  if (!xSignature || !xRequestId) return false
+
+  // MP envía: ts=<timestamp>,v1=<hash>
+  const parts = Object.fromEntries(xSignature.split(',').map((p) => p.split('=')))
+  const ts = parts['ts']
+  const v1 = parts['v1']
+  if (!ts || !v1) return false
+
+  const manifest = `id:${xRequestId};request-id:${xRequestId};ts:${ts};`
+  const expected = createHmac('sha256', secret).update(manifest).digest('hex')
+
+  return expected === v1
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    const rawBody = await req.text()
+
+    if (!verificarFirmaMP(req, rawBody)) {
+      return NextResponse.json({ error: 'Firma inválida' }, { status: 401 })
+    }
+
+    const body = JSON.parse(rawBody)
 
     if (body.type !== 'subscription_preapproval') {
       return NextResponse.json({ ok: true })
