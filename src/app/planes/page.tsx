@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 type Periodo = 'mensual' | 'anual'
 
@@ -86,13 +87,27 @@ function Spinner() {
 }
 
 export default function PlanesPage() {
+  const router = useRouter()
   const [periodo, setPeriodo] = useState<Periodo>('mensual')
-  const [elegido, setElegido] = useState<string | null>(null)
+  const [loading, setLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleElegir(planId: string) {
-    setElegido(planId)
-    // TODO: integrar Mercado Pago — crear preferencia de pago con plan y periodo seleccionado
-    setTimeout(() => setElegido(null), 3000)
+  async function handleElegir(planId: string) {
+    setLoading(planId)
+    setError(null)
+    try {
+      const res = await fetch('/api/suscripcion/crear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: planId, modalidad: periodo }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.init_point) throw new Error(data.error ?? 'Error')
+      window.location.href = data.init_point
+    } catch {
+      setError('No pudimos conectar con Mercado Pago. Intentá nuevamente.')
+      setLoading(null)
+    }
   }
 
   return (
@@ -147,10 +162,15 @@ export default function PlanesPage() {
         </div>
 
         {/* Cards */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl text-center">
+            {error}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {PLANES.map((plan) => {
             const precio = periodo === 'mensual' ? plan.mensual : plan.anual
-            const isElegido = elegido === plan.id
+            const isLoading = loading === plan.id
 
             return (
               <div
@@ -204,26 +224,21 @@ export default function PlanesPage() {
                   ))}
                 </div>
 
-                <div className="px-6 pb-6 space-y-2">
+                <div className="px-6 pb-6">
                   <button
                     onClick={() => handleElegir(plan.id)}
-                    disabled={isElegido}
-                    className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors ${plan.btnCls} disabled:opacity-80`}
+                    disabled={loading !== null}
+                    className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors ${plan.btnCls} disabled:opacity-70`}
                   >
-                    {isElegido ? (
+                    {isLoading ? (
                       <>
                         <Spinner />
-                        Próximamente…
+                        Procesando…
                       </>
                     ) : (
                       'Elegir'
                     )}
                   </button>
-                  {isElegido && (
-                    <p className="text-center text-xs text-on-surface-variant">
-                      Integrando Mercado Pago — te avisamos cuando esté listo
-                    </p>
-                  )}
                 </div>
               </div>
             )

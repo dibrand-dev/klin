@@ -722,6 +722,44 @@ export type Database = {
         }
         Relationships: []
       }
+      suscripciones: {
+        Row: {
+          id: string
+          terapeuta_id: string
+          plan: 'esencial' | 'profesional' | 'premium'
+          modalidad: 'mensual' | 'anual'
+          mp_preapproval_id: string | null
+          mp_preapproval_plan_id: string | null
+          estado: 'pending' | 'authorized' | 'paused' | 'cancelled'
+          monto: number
+          suscripcion_inicio: string | null
+          suscripcion_fin: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          terapeuta_id: string
+          plan: 'esencial' | 'profesional' | 'premium'
+          modalidad: 'mensual' | 'anual'
+          mp_preapproval_id?: string | null
+          mp_preapproval_plan_id?: string | null
+          estado?: 'pending' | 'authorized' | 'paused' | 'cancelled'
+          monto: number
+          suscripcion_inicio?: string | null
+          suscripcion_fin?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          estado?: 'pending' | 'authorized' | 'paused' | 'cancelled'
+          mp_preapproval_id?: string | null
+          suscripcion_inicio?: string | null
+          suscripcion_fin?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
