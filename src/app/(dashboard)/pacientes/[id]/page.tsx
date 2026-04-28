@@ -17,7 +17,7 @@ export default async function PacienteDetallePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: paciente }, turnosRes, notasRes, medicacionesRes] = await Promise.all([
+  const [{ data: paciente }, turnosRes, notasRes, medicacionesRes, obrasSocialesRes, profOSRes] = await Promise.all([
     supabase
       .from('pacientes')
       .select('*')
@@ -41,6 +41,17 @@ export default async function PacienteDetallePage({
       .eq('paciente_id', params.id)
       .eq('terapeuta_id', user.id)
       .order('created_at'),
+    supabase
+      .from('obras_sociales')
+      .select('nombre')
+      .eq('validada', true)
+      .order('nombre'),
+    supabase
+      .from('profesional_obras_sociales')
+      .select('*')
+      .eq('terapeuta_id', user.id)
+      .eq('activa', true)
+      .order('nombre'),
   ])
 
   if (!paciente) notFound()
@@ -83,6 +94,8 @@ export default async function PacienteDetallePage({
   }>
 
   const editMode = searchParams.edit === '1'
+  const obrasSociales = (obrasSocialesRes.data ?? []).map((o) => o.nombre)
+  const profObrasSociales = profOSRes.data ?? []
 
   return (
     <div className="mx-auto w-full max-w-[1240px] px-4 md:px-7 pt-6 md:pt-8 pb-20">
@@ -98,6 +111,8 @@ export default async function PacienteDetallePage({
         interconsultas={interconsultas}
         activeTab={tab}
         initialEdit={editMode}
+        obrasSociales={obrasSociales}
+        profObrasSociales={profObrasSociales}
         key={editMode ? 'edit' : 'view'}
       />
     </div>

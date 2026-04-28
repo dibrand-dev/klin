@@ -4,16 +4,20 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
+import SidebarUserCard from '@/components/ui/SidebarUserCard'
 
 const NAV_ITEMS = [
   { href: '/agenda', label: 'Agenda', icon: 'calendar_today' },
   { href: '/pacientes', label: 'Pacientes', icon: 'groups' },
-  { href: '/facturacion', label: 'Facturación', icon: 'payments' },
+  {
+    href: '/facturacion/liquidacion', label: 'Facturación', icon: 'payments',
+    children: [{ href: '/facturacion/liquidacion', label: 'Liquidación OS' }],
+  },
   { href: '/informes', label: 'Informes', icon: 'description' },
   { href: '/ajustes', label: 'Ajustes', icon: 'settings' },
 ]
 
-export default function NavigationDrawer({ profile }: { profile: Profile | null }) {
+export default function NavigationDrawer({ profile, onNuevaSesion }: { profile: Profile | null; onNuevaSesion: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -45,24 +49,16 @@ export default function NavigationDrawer({ profile }: { profile: Profile | null 
       </div>
 
       {/* User Profile Card */}
-      <div className="bg-surface-container-low mb-6 p-4 rounded-xl flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-fixed flex items-center justify-center font-bold text-sm shrink-0">
-          {initials}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm text-primary truncate">
-            {profile ? `${profile.nombre} ${profile.apellido}` : 'Usuario'}
-          </p>
-          <p className="text-xs text-on-surface-variant truncate">
-            {profile?.especialidad || profile?.email || ''}
-          </p>
-        </div>
-      </div>
+      <SidebarUserCard
+        initials={initials}
+        name={profile ? `${profile.nombre} ${profile.apellido}` : 'Usuario'}
+        subtitle={profile?.especialidad || profile?.email || ''}
+      />
 
       {/* Navigation Menu */}
       <ul className="flex flex-col gap-2 flex-1">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          const isActive = pathname === item.href || pathname.startsWith(item.href.split('/')[1] ? '/' + item.href.split('/')[1] : item.href)
           return (
             <li key={item.href}>
               <Link
@@ -82,6 +78,24 @@ export default function NavigationDrawer({ profile }: { profile: Profile | null 
                 </span>
                 <span className="text-sm">{item.label}</span>
               </Link>
+              {'children' in item && item.children && isActive && (
+                <ul className="ml-10 mt-1 space-y-1">
+                  {item.children.map(child => (
+                    <li key={child.href}>
+                      <Link
+                        href={child.href}
+                        className={`block text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                          pathname === child.href || pathname.startsWith(child.href)
+                            ? 'text-primary font-semibold'
+                            : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+                        }`}
+                      >
+                        {child.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           )
         })}
@@ -89,13 +103,13 @@ export default function NavigationDrawer({ profile }: { profile: Profile | null 
 
       {/* Action Button */}
       <div className="mt-8 mb-6">
-        <Link
-          href="/turnos/nuevo"
+        <button
+          onClick={onNuevaSesion}
           className="w-full bg-primary text-on-primary font-medium text-sm px-4 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary-container transition-colors duration-200 shadow-sm active:scale-[0.98]"
         >
           <span className="material-symbols-outlined text-xl">add</span>
           Nueva Sesión
-        </Link>
+        </button>
       </div>
 
       {/* Logout */}

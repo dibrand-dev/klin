@@ -36,21 +36,25 @@ export const PAISES = [
 
 // Prepagas y obras sociales nacionales de Argentina
 export const OBRAS_SOCIALES_AR = [
-  // Prepagas
+  // Principales / más usadas
+  'Hospital Italiano',
   'OSDE',
   'Swiss Medical',
+  'OMINT',
+  'IOMA',
+  'PAMI / INSSJP',
   'Galeno',
   'Medicus',
-  'OMINT',
   'Sancor Salud',
   'Accord Salud',
+  'OSPETELCO',
+  'Obra Social de Choferes de Camiones',
+  // Otras prepagas
   'Jerárquicos Salud',
   'Valora Salud',
   'Luis Pasteur',
   'CEMIC',
-  // Obras sociales provinciales y nacionales grandes
-  'IOMA',
-  'PAMI / INSSJP',
+  // Obras sociales provinciales y nacionales
   'IOSFA',
   'IOSE',
   'OSEP',

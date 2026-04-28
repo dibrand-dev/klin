@@ -215,12 +215,12 @@ export default function HistorialList({ notas, turnos, pacienteId }: Props) {
         })}
 
         <div className="flex justify-center py-8">
-          <Link
-            href={`/pacientes/${pacienteId}/historial/nueva`}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('openNuevaNotaClinica', { detail: { pacienteId } }))}
             className="px-6 py-2 border border-outline-variant text-slate-500 font-bold text-xs rounded-full hover:bg-white hover:text-primary transition-all"
           >
             + Nueva nota manual
-          </Link>
+          </button>
         </div>
       </div>
 

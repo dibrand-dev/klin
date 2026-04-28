@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 import PerfilProfesional from '@/components/ajustes/PerfilProfesional'
 
-export const metadata = { title: 'Ajustes — ConsultorioApp' }
+export const metadata = { title: 'Ajustes — KLIA' }
 
 export default async function AjustesPage() {
   const supabase = createClient()
@@ -21,6 +22,21 @@ export default async function AjustesPage() {
       <p className="text-sm text-on-surface-variant mb-8">
         Configurá tu perfil profesional. Esta información es visible para colegas en la solapa de Interconsultas.
       </p>
+
+      <div className="mb-8">
+        <Link
+          href="/ajustes/obras-sociales"
+          className="flex items-center gap-4 bg-white rounded-2xl border border-outline-variant/20 shadow-sm px-6 py-4 hover:border-primary/30 hover:shadow-md transition-all group"
+        >
+          <span className="material-symbols-outlined text-2xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>health_and_safety</span>
+          <div className="flex-1">
+            <p className="font-semibold text-sm text-on-surface">Obras Sociales</p>
+            <p className="text-xs text-on-surface-variant">Configurá honorarios y datos de cada obra social para liquidaciones</p>
+          </div>
+          <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+        </Link>
+      </div>
+
       <PerfilProfesional profile={profile} />
     </div>
   )

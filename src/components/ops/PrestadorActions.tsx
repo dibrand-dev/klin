@@ -1,18 +1,36 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import type { Plan } from '@/types/database'
+
+async function patchProfile(id: string, body: Record<string, unknown>) {
+  const res = await fetch(`/api/ops/prestadores/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}))
+    throw new Error(json.error ?? 'Error al guardar')
+  }
+}
 
 export default function PrestadorActions({
   profileId,
   profileName,
+  estadoCuenta,
+  trialFin,
   planes,
 }: {
   profileId: string
   profileName: string
+  estadoCuenta: string
+  trialFin: string | null
   planes: Pick<Plan, 'id' | 'nombre'>[]
 }) {
+  const router = useRouter()
   const [plan, setPlan] = useState('')
   const [diasPrueba, setDiasPrueba] = useState('')
   const [suspendConfirm, setSuspendConfirm] = useState(false)
@@ -24,29 +42,60 @@ export default function PrestadorActions({
     setTimeout(() => setMsg(null), 4000)
   }
 
-  async function handleSuspender() {
-    if (!suspendConfirm) { setSuspendConfirm(true); return }
-    setLoading('suspend')
-    feedback('ok', `Acción registrada para ${profileName}. (Integración pendiente)`)
-    setSuspendConfirm(false)
-    setLoading(null)
-  }
-
   async function handleCambiarPlan() {
     if (!plan) return
     setLoading('plan')
-    const nombre = planes.find((p) => p.id === plan)?.nombre ?? plan
-    feedback('ok', `Plan cambiado a "${nombre}" para ${profileName}. (Integración pendiente)`)
-    setPlan('')
-    setLoading(null)
+    const planNombre = planes.find((p) => p.id === plan)?.nombre?.toLowerCase() ?? ''
+    try {
+      await patchProfile(profileId, {
+        plan: planNombre,
+        estado_cuenta: 'activa',
+        trial_fin: null,
+      })
+      setPlan('')
+      feedback('ok', `Plan cambiado a "${planNombre}"`)
+      router.refresh()
+    } catch (e) {
+      feedback('err', (e as Error).message)
+    } finally {
+      setLoading(null)
+    }
   }
 
   async function handleExtenderPrueba() {
-    if (!diasPrueba || isNaN(Number(diasPrueba))) return
+    const dias = Number(diasPrueba)
+    if (!dias || isNaN(dias)) return
     setLoading('prueba')
-    feedback('ok', `Período de prueba extendido ${diasPrueba} días para ${profileName}. (Integración pendiente)`)
-    setDiasPrueba('')
-    setLoading(null)
+    const base = trialFin && new Date(trialFin) > new Date() ? new Date(trialFin) : new Date()
+    base.setDate(base.getDate() + dias)
+    try {
+      await patchProfile(profileId, {
+        trial_fin: base.toISOString(),
+        estado_cuenta: 'trial',
+      })
+      setDiasPrueba('')
+      feedback('ok', `Período de prueba extendido ${dias} días`)
+      router.refresh()
+    } catch (e) {
+      feedback('err', (e as Error).message)
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  async function handleSuspender() {
+    if (!suspendConfirm) { setSuspendConfirm(true); return }
+    setLoading('suspend')
+    try {
+      await patchProfile(profileId, { estado_cuenta: 'bloqueada' })
+      setSuspendConfirm(false)
+      feedback('ok', `${profileName} suspendido correctamente`)
+      router.refresh()
+    } catch (e) {
+      feedback('err', (e as Error).message)
+    } finally {
+      setLoading(null)
+    }
   }
 
   return (
@@ -106,7 +155,7 @@ export default function PrestadorActions({
           </button>
         </div>
 
-        {/* Suspender / Reactivar */}
+        {/* Suspender */}
         <div className="border border-outline-variant/20 rounded-xl p-4">
           <p className="text-xs font-semibold text-on-surface-variant mb-3 uppercase tracking-wide">Cuenta</p>
           <p className="text-xs text-on-surface-variant mb-3">
@@ -120,18 +169,13 @@ export default function PrestadorActions({
               disabled={loading === 'suspend'}
               className={cn(
                 'flex-1 text-sm py-2 rounded-xl font-semibold transition-colors',
-                suspendConfirm
-                  ? 'bg-error text-on-error hover:opacity-90'
-                  : 'btn-secondary'
+                suspendConfirm ? 'bg-error text-on-error hover:opacity-90' : 'btn-secondary'
               )}
             >
-              {suspendConfirm ? 'Sí, suspender' : 'Suspender'}
+              {loading === 'suspend' ? 'Guardando...' : suspendConfirm ? 'Sí, suspender' : 'Suspender'}
             </button>
             {suspendConfirm && (
-              <button
-                onClick={() => setSuspendConfirm(false)}
-                className="btn-secondary flex-1 text-sm py-2"
-              >
+              <button onClick={() => setSuspendConfirm(false)} className="btn-secondary flex-1 text-sm py-2">
                 Cancelar
               </button>
             )}
