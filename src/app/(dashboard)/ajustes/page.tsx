@@ -23,7 +23,18 @@ export default async function AjustesPage() {
         Configurá tu perfil profesional. Esta información es visible para colegas en la solapa de Interconsultas.
       </p>
 
-      <div className="mb-8">
+      <div className="mb-8 space-y-3">
+        <Link
+          href="/ajustes/suscripcion"
+          className="flex items-center gap-4 bg-white rounded-2xl border border-outline-variant/20 shadow-sm px-6 py-4 hover:border-primary/30 hover:shadow-md transition-all group"
+        >
+          <span className="material-symbols-outlined text-2xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>credit_card</span>
+          <div className="flex-1">
+            <p className="font-semibold text-sm text-on-surface">Suscripción y plan</p>
+            <p className="text-xs text-on-surface-variant">Ver tu plan actual, cambiar de plan o cancelar tu suscripción</p>
+          </div>
+          <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+        </Link>
         <Link
           href="/ajustes/obras-sociales"
           className="flex items-center gap-4 bg-white rounded-2xl border border-outline-variant/20 shadow-sm px-6 py-4 hover:border-primary/30 hover:shadow-md transition-all group"
