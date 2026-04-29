@@ -194,11 +194,35 @@ export default function AgendaSemanal({
     fetchSemana(nueva)
   }
 
+  function navegarMes(dir: 1 | -1) {
+    const nuevo = dir === 1 ? addMonths(mesActual, 1) : subMonths(mesActual, 1)
+    setMesActual(nuevo)
+    fetchMes(nuevo)
+  }
+
+  function handleDiaChange(d: Date) {
+    const prevInicio = startOfWeek(diaActual, { weekStartsOn: 1 })
+    const newInicio = startOfWeek(d, { weekStartsOn: 1 })
+    setDiaActual(d)
+    if (!isSameDay(prevInicio, newInicio)) {
+      setSemanaActual(d)
+      fetchSemana(d)
+    }
+  }
+
+  function handleVista(v: 'dia' | 'semana' | 'mes') {
+    setVista(v)
+    if (v === 'mes') fetchMes(mesActual)
+    else if (v === 'semana') fetchSemana(semanaActual)
+  }
+
   function irAHoy() {
     const hoy = new Date()
     setSemanaActual(hoy)
     setDiaActual(hoy)
-    fetchSemana(hoy)
+    setMesActual(hoy)
+    if (vista === 'mes') fetchMes(hoy)
+    else fetchSemana(hoy)
   }
 
   function getTurnosDelDia(dia: Date) {
@@ -315,6 +339,25 @@ export default function AgendaSemanal({
             </div>
           )
         })}
+      </div>
+    )
+  }
+
+  function ViewSelector() {
+    return (
+      <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden text-xs">
+        {(['dia', 'semana', 'mes'] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => handleVista(v)}
+            className={cn(
+              'px-3 py-1.5 font-medium border-r border-gray-200 last:border-r-0 transition-colors',
+              vista === v ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-50'
+            )}
+          >
+            {v === 'dia' ? 'Día' : v === 'semana' ? 'Semana' : 'Mes'}
+          </button>
+        ))}
       </div>
     )
   }
