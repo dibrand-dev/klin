@@ -12,10 +12,11 @@ import {
   cn, ESTADO_TURNO_COLORS, ESTADO_TURNO_DOT,
   formatNombreCompleto,
 } from '@/lib/utils'
-import type { Turno, Paciente } from '@/types/database'
+import type { Turno, Paciente, Entrevista } from '@/types/database'
 import SlideOver from '@/components/ui/SlideOver'
 import NuevoTurnoPageForm from './NuevoTurnoPageForm'
 import TurnoDetalleModal from './TurnoDetalleModal'
+import EntrevistaDetalleModal from './EntrevistaDetalleModal'
 
 const HORA_INICIO = 7
 const HORA_FIN = 21
@@ -34,6 +35,7 @@ interface AgendaSemanalProps {
   terapeutaId: string
   googleConnected?: boolean
   googleEventsIniciales?: GoogleEventSerialized[]
+  entrevistasIniciales?: Entrevista[]
 }
 
 function getTopOffset(fechaHora: string) {
@@ -46,15 +48,17 @@ function getHeight(min: number) {
 }
 
 export default function AgendaSemanal({
-  turnosIniciales, pacientes, terapeutaId, googleConnected = false, googleEventsIniciales = [],
+  turnosIniciales, pacientes, terapeutaId, googleConnected = false, googleEventsIniciales = [], entrevistasIniciales = [],
 }: AgendaSemanalProps) {
   const [semanaActual, setSemanaActual] = useState(new Date())
   const [diaActual, setDiaActual] = useState(new Date())
   const [turnos, setTurnos] = useState<Turno[]>(turnosIniciales)
   const [googleEvents, setGoogleEvents] = useState<GoogleEventSerialized[]>(googleEventsIniciales)
+  const [entrevistas, setEntrevistas] = useState<Entrevista[]>(entrevistasIniciales)
   const [nuevoFecha, setNuevoFecha] = useState<Date>(new Date())
   const [nuevoOpen, setNuevoOpen] = useState(false)
   const [turnoSeleccionado, setTurnoSeleccionado] = useState<Turno | null>(null)
+  const [entrevistaSeleccionada, setEntrevistaSeleccionada] = useState<Entrevista | null>(null)
   const [googleConflicto, setGoogleConflicto] = useState(false)
 
   function abrirNuevoTurno(fecha: Date) {
@@ -82,6 +86,8 @@ export default function AgendaSemanal({
   const fetchSemana = useCallback(async (refDate: Date) => {
     const inicio = startOfWeek(refDate, { weekStartsOn: 1 })
     const fin = endOfWeek(refDate, { weekStartsOn: 1 })
+    const inicioStr = format(inicio, 'yyyy-MM-dd')
+    const finStr = format(fin, 'yyyy-MM-dd')
     const supabase = createClient()
     const turnosPromise = supabase
       .from('turnos')
@@ -90,13 +96,21 @@ export default function AgendaSemanal({
       .gte('fecha_hora', inicio.toISOString())
       .lte('fecha_hora', fin.toISOString())
       .order('fecha_hora')
+    const entrevistasPromise = supabase
+      .from('entrevistas')
+      .select('*')
+      .eq('terapeuta_id', terapeutaId)
+      .gte('fecha', inicioStr)
+      .lte('fecha', finStr)
+      .neq('estado', 'cancelada')
     const googlePromise = googleConnected
       ? fetch(`/api/google-calendar/events?start=${inicio.toISOString()}&end=${fin.toISOString()}`)
           .then((r) => r.json() as Promise<GoogleEventSerialized[]>)
           .catch(() => [] as GoogleEventSerialized[])
       : Promise.resolve([] as GoogleEventSerialized[])
-    const [{ data }, gEvents] = await Promise.all([turnosPromise, googlePromise])
+    const [{ data }, { data: entrevistasData }, gEvents] = await Promise.all([turnosPromise, entrevistasPromise, googlePromise])
     if (data) setTurnos(data as unknown as Turno[])
+    if (entrevistasData) setEntrevistas(entrevistasData as Entrevista[])
     setGoogleEvents(gEvents)
   }, [terapeutaId, googleConnected])
 
@@ -144,6 +158,9 @@ export default function AgendaSemanal({
   function ColumnaHoras({ dia, onCeldaClick }: { dia: Date; onCeldaClick: (f: Date) => void }) {
     const lista = getTurnosDelDia(dia)
     const gEventsDia = googleEvents.filter((e) => isSameDay(new Date(e.inicio), dia))
+    const entrevistasDia = entrevistas.filter(
+      (e) => isSameDay(parseISO(e.fecha + 'T12:00:00'), dia) && e.estado !== 'cancelada'
+    )
     return (
       <div className="flex-1 relative">
         {HORAS.map((hora) => (
@@ -172,6 +189,30 @@ export default function AgendaSemanal({
               title={`Google Calendar: ${ev.titulo}`}
             >
               <span className="text-gray-500 truncate block font-medium">{ev.titulo}</span>
+            </div>
+          )
+        })}
+        {/* Entrevistas */}
+        {entrevistasDia.map((entrevista) => {
+          const fechaHora = `${entrevista.fecha}T${entrevista.hora}:00`
+          const top = getTopOffset(fechaHora)
+          const height = Math.max(getHeight(entrevista.duracion), 28)
+          return (
+            <div
+              key={entrevista.id}
+              className="absolute left-0.5 right-0.5 rounded-md px-2 py-1 cursor-pointer border text-xs bg-amber-100 border-amber-400 text-amber-900 hover:shadow-md transition-shadow overflow-hidden"
+              style={{ top: `${top}px`, height: `${height}px` }}
+              onClick={(e) => { e.stopPropagation(); setEntrevistaSeleccionada(entrevista) }}
+            >
+              <div className="flex items-center gap-1 font-semibold truncate">
+                <span className="w-4 h-4 rounded-full bg-amber-400 text-amber-900 text-[9px] font-bold flex items-center justify-center flex-shrink-0">E</span>
+                <span className="truncate flex-1">{entrevista.apellido}, {entrevista.nombre}</span>
+              </div>
+              {height > 40 && (
+                <div className="opacity-80 truncate mt-0.5">
+                  {entrevista.hora} · {entrevista.duracion} min
+                </div>
+              )}
             </div>
           )
         })}
@@ -400,10 +441,22 @@ export default function AgendaSemanal({
             terapeutaId={terapeutaId}
             fechaInicial={nuevoFecha}
             onCreado={(t) => { setTurnos((prev) => [...prev, t]); setNuevoOpen(false) }}
+            onEntrevistaCreada={(e) => { setEntrevistas((prev) => [...prev, e]); setNuevoOpen(false) }}
             onClose={() => setNuevoOpen(false)}
           />
         </Suspense>
       </SlideOver>
+
+      {entrevistaSeleccionada && (
+        <EntrevistaDetalleModal
+          entrevista={entrevistaSeleccionada}
+          onClose={() => setEntrevistaSeleccionada(null)}
+          onEntrevistaActualizada={(updated) => {
+            setEntrevistas((prev) => prev.map((e) => e.id === updated.id ? updated : e))
+            setEntrevistaSeleccionada(updated.estado === 'cancelada' ? null : updated)
+          }}
+        />
+      )}
 
       {turnoSeleccionado && (
         <TurnoDetalleModal

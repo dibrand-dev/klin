@@ -47,16 +47,18 @@ export async function crearEventoCalendario(
     hora: string
     duracion: number
     modalidad: string
+    tipo?: string
   },
   calendarId = 'primary',
 ): Promise<string> {
   const inicio = new Date(`${turno.fecha}T${turno.hora}`)
   const fin = new Date(inicio.getTime() + turno.duracion * 60000)
+  const tipoLabel = turno.tipo ?? 'Sesión'
 
   const evento = await calendarClient.events.insert({
     calendarId,
     requestBody: {
-      summary: `${turno.paciente_apellido}, ${turno.paciente_nombre} | Sesión`,
+      summary: `${turno.paciente_apellido}, ${turno.paciente_nombre} | ${tipoLabel}`,
       start: {
         dateTime: inicio.toISOString(),
         timeZone: 'America/Argentina/Buenos_Aires',

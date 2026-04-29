@@ -725,20 +725,63 @@ export type Database = {
         }
         Relationships: []
       }
-      google_calendar_tokens: {
+      entrevistas: {
         Row: {
           id: string
           terapeuta_id: string
-          access_token: string
-          refresh_token: string
-          token_expiry: string
-          calendar_id: string
-          sync_enabled: boolean
+          nombre: string
+          apellido: string
+          telefono: string | null
+          email: string | null
+          fecha: string
+          hora: string
+          duracion: number
+          costo: number | null
+          notas: string | null
+          estado: 'pendiente' | 'realizada' | 'cancelada' | 'convertida'
+          paciente_id: string | null
+          google_event_id: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
+          terapeuta_id: string
+          nombre: string
+          apellido: string
+          telefono?: string | null
+          email?: string | null
+          fecha: string
+          hora: string
+          duracion?: number
+          costo?: number | null
+          notas?: string | null
+          estado?: 'pendiente' | 'realizada' | 'cancelada' | 'convertida'
+          paciente_id?: string | null
+          google_event_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          nombre?: string
+          apellido?: string
+          telefono?: string | null
+          email?: string | null
+          fecha?: string
+          hora?: string
+          duracion?: number
+          costo?: number | null
+          notas?: string | null
+          estado?: 'pendiente' | 'realizada' | 'cancelada' | 'convertida'
+          paciente_id?: string | null
+          google_event_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      google_calendar_tokens: {
+        Row: {
+          id: string
           terapeuta_id: string
           access_token: string
           refresh_token: string
@@ -847,6 +890,7 @@ export type OsHonorariosHistorial = Database['public']['Tables']['os_honorarios_
 export type Liquidacion = Database['public']['Tables']['liquidaciones']['Row']
 export type LiquidacionItem = Database['public']['Tables']['liquidacion_items']['Row']
 export type GoogleCalendarToken = Database['public']['Tables']['google_calendar_tokens']['Row']
+export type Entrevista = Database['public']['Tables']['entrevistas']['Row']
 
 export type PlanConFuncionalidades = Plan & {
   plan_funcionalidades: { funcionalidad: string }[]

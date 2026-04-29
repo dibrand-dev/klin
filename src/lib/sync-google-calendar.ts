@@ -105,6 +105,69 @@ export async function sincronizarSerieRecurrente(serieId: string, terapeutaId: s
   await Promise.all(turnos.map((t) => sincronizarTurnoCreado(t.id, terapeutaId)))
 }
 
+export async function sincronizarEntrevistaCreada(entrevistaId: string, terapeutaId: string) {
+  const supabase = db()
+
+  const { data: tokens } = await supabase
+    .from('google_calendar_tokens')
+    .select('*')
+    .eq('terapeuta_id', terapeutaId)
+    .eq('sync_enabled', true)
+    .single()
+
+  if (!tokens) return
+
+  const { data: entrevista } = await supabase
+    .from('entrevistas')
+    .select('*')
+    .eq('id', entrevistaId)
+    .single()
+
+  if (!entrevista) return
+
+  const calendarClient = await getAuthenticatedClient(tokens)
+
+  const eventId = await crearEventoCalendario(
+    calendarClient,
+    {
+      paciente_nombre: entrevista.nombre,
+      paciente_apellido: entrevista.apellido,
+      fecha: entrevista.fecha,
+      hora: entrevista.hora,
+      duracion: entrevista.duracion,
+      modalidad: 'presencial',
+      tipo: 'Entrevista',
+    },
+    tokens.calendar_id || 'primary',
+  )
+
+  await supabase.from('entrevistas').update({ google_event_id: eventId }).eq('id', entrevistaId)
+}
+
+export async function sincronizarEntrevistaCancelada(entrevistaId: string, terapeutaId: string) {
+  const supabase = db()
+
+  const { data: tokens } = await supabase
+    .from('google_calendar_tokens')
+    .select('*')
+    .eq('terapeuta_id', terapeutaId)
+    .single()
+
+  if (!tokens) return
+
+  const { data: entrevista } = await supabase
+    .from('entrevistas')
+    .select('google_event_id')
+    .eq('id', entrevistaId)
+    .single()
+
+  if (!entrevista?.google_event_id) return
+
+  const calendarClient = await getAuthenticatedClient(tokens)
+  await eliminarEventoCalendario(calendarClient, entrevista.google_event_id, tokens.calendar_id || 'primary')
+  await supabase.from('entrevistas').update({ google_event_id: null }).eq('id', entrevistaId)
+}
+
 export async function sincronizarSerieCancelada(
   serieId: string,
   terapeutaId: string,

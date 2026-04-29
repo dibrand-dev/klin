@@ -6,7 +6,7 @@ import { format, addMonths } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import type { Paciente, Turno, ModalidadTurno } from '@/types/database'
+import type { Paciente, Turno, ModalidadTurno, Entrevista } from '@/types/database'
 import type { ConflictoDetallado } from '@/lib/recurrentes'
 import { DIAS_SEMANA } from '@/lib/recurrentes'
 import MontoInput from '@/components/ui/MontoInput'
@@ -26,6 +26,7 @@ interface NuevoTurnoPageFormProps {
   fechaInicial?: Date
   pacienteIdInicial?: string
   onCreado?: (turno: Turno) => void
+  onEntrevistaCreada?: (e: Entrevista) => void
   onClose?: () => void
 }
 
@@ -35,7 +36,7 @@ function diaDeFecha(fechaStr: string): number {
 }
 
 export default function NuevoTurnoPageForm({
-  pacientes, terapeutaId, fechaInicial, pacienteIdInicial, onCreado, onClose,
+  pacientes, terapeutaId, fechaInicial, pacienteIdInicial, onCreado, onEntrevistaCreada, onClose,
 }: NuevoTurnoPageFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -46,6 +47,19 @@ export default function NuevoTurnoPageForm({
   const horaParam = fechaInicial
     ? format(fechaInicial, 'HH:mm')
     : (searchParams.get('hora') ?? '09:00')
+
+  const [tipo, setTipo] = useState<'sesion' | 'entrevista'>('sesion')
+  const [entrevistaForm, setEntrevistaForm] = useState({
+    nombre: '',
+    apellido: '',
+    telefono: '',
+    email: '',
+    fecha: fechaParam,
+    hora: horaParam,
+    duracion: 50,
+    costo: '',
+    notas: '',
+  })
 
   const [form, setForm] = useState({
     paciente_id: pacienteIdInicial ?? '',
@@ -91,6 +105,63 @@ export default function NuevoTurnoPageForm({
       body: JSON.stringify({ serie_id: serieId, action: 'create' }),
     }).catch(() => {})
     if (onClose) {
+      router.refresh()
+      onClose()
+    } else {
+      router.push('/agenda')
+      router.refresh()
+    }
+  }
+
+  function handleEntrevistaChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) {
+    const { name, value } = e.target
+    setEntrevistaForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  async function handleSubmitEntrevista(e: React.FormEvent) {
+    e.preventDefault()
+    if (!entrevistaForm.nombre.trim()) { setError('Nombre es requerido'); return }
+    if (!entrevistaForm.apellido.trim()) { setError('Apellido es requerido'); return }
+    setLoading(true)
+    setError(null)
+    const supabase = createClient()
+    const { data, error: dbError } = await supabase
+      .from('entrevistas')
+      .insert({
+        terapeuta_id: terapeutaId,
+        nombre: entrevistaForm.nombre.trim(),
+        apellido: entrevistaForm.apellido.trim(),
+        telefono: entrevistaForm.telefono.trim() || null,
+        email: entrevistaForm.email.trim() || null,
+        fecha: entrevistaForm.fecha,
+        hora: entrevistaForm.hora,
+        duracion: Number(entrevistaForm.duracion),
+        costo: entrevistaForm.costo ? Number(entrevistaForm.costo) : null,
+        notas: entrevistaForm.notas.trim() || null,
+        estado: 'pendiente',
+      })
+      .select('*')
+      .single()
+
+    if (dbError) {
+      setError('Error al crear la entrevista. Intentá de nuevo.')
+      setLoading(false)
+      return
+    }
+
+    if (data?.id) {
+      fetch('/api/google-calendar/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entrevista_id: data.id, action: 'create' }),
+      }).catch(() => {})
+    }
+
+    if (onEntrevistaCreada && data) {
+      onEntrevistaCreada(data)
+    } else if (onClose) {
       router.refresh()
       onClose()
     } else {
@@ -182,6 +253,104 @@ export default function NuevoTurnoPageForm({
 
   const pacientesActivos = pacientes.filter((p) => p.activo)
 
+  if (tipo === 'entrevista') {
+    return (
+      <form onSubmit={handleSubmitEntrevista} className="space-y-4">
+        {/* Selector tipo */}
+        <div className="card p-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">Tipo de turno</p>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="tipo" value="sesion" checked={false}
+                onChange={() => setTipo('sesion')} className="accent-primary" />
+              <span className="text-sm text-gray-700">Sesión</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="tipo" value="entrevista" checked
+                onChange={() => {}} className="accent-primary" />
+              <span className="text-sm text-gray-700 font-medium">Entrevista</span>
+            </label>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="card p-4 grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre *</label>
+            <input name="nombre" value={entrevistaForm.nombre} onChange={handleEntrevistaChange}
+              required className="input-field" placeholder="Nombre" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Apellido *</label>
+            <input name="apellido" value={entrevistaForm.apellido} onChange={handleEntrevistaChange}
+              required className="input-field" placeholder="Apellido" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Teléfono</label>
+            <input name="telefono" value={entrevistaForm.telefono} onChange={handleEntrevistaChange}
+              className="input-field" placeholder="Opcional" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+            <input name="email" type="email" value={entrevistaForm.email}
+              onChange={handleEntrevistaChange} className="input-field" placeholder="Opcional" />
+          </div>
+        </div>
+
+        <div className="card p-4 grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha *</label>
+            <input type="date" name="fecha" value={entrevistaForm.fecha}
+              onChange={handleEntrevistaChange} required className="input-field" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Hora *</label>
+            <input type="time" name="hora" value={entrevistaForm.hora}
+              onChange={handleEntrevistaChange} required className="input-field" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Duración</label>
+            <select name="duracion" value={entrevistaForm.duracion}
+              onChange={handleEntrevistaChange} className="input-field">
+              {DURACIONES.map((d) => <option key={d} value={d}>{d} min</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Costo (ARS) <span className="text-gray-400 font-normal">opcional</span></label>
+            <MontoInput name="costo" value={entrevistaForm.costo}
+              onChange={(raw) => setEntrevistaForm((p) => ({ ...p, costo: raw }))}
+              className="input-field" />
+          </div>
+        </div>
+
+        <div className="card p-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Notas <span className="text-gray-400 font-normal">opcional</span>
+          </label>
+          <textarea name="notas" value={entrevistaForm.notas}
+            onChange={handleEntrevistaChange} rows={3}
+            placeholder="Observaciones..." className="input-field resize-none" />
+        </div>
+
+        <div className="flex gap-3 pt-1">
+          <button type="button" onClick={() => onClose ? onClose() : router.back()}
+            className="btn-secondary flex-1 py-3">
+            Cancelar
+          </button>
+          <button type="submit" disabled={loading}
+            className={cn('btn-primary flex-1 py-3', loading && 'opacity-70')}>
+            {loading ? 'Guardando...' : 'Crear entrevista'}
+          </button>
+        </div>
+      </form>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
@@ -189,6 +358,23 @@ export default function NuevoTurnoPageForm({
           {error}
         </div>
       )}
+
+      {/* Selector tipo */}
+      <div className="card p-4">
+        <p className="text-sm font-medium text-gray-700 mb-2">Tipo de turno</p>
+        <div className="flex gap-6">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="tipo" value="sesion" checked
+              onChange={() => {}} className="accent-primary" />
+            <span className="text-sm text-gray-700 font-medium">Sesión</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="tipo" value="entrevista" checked={false}
+              onChange={() => setTipo('entrevista')} className="accent-primary" />
+            <span className="text-sm text-gray-700">Entrevista</span>
+          </label>
+        </div>
+      </div>
 
       {mostrandoConflictos ? (
         <div className="card p-4">

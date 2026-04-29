@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AgendaSemanal from '@/components/agenda/AgendaSemanal'
 import { startOfWeek, endOfWeek } from 'date-fns'
-import type { Turno } from '@/types/database'
+import type { Turno, Entrevista } from '@/types/database'
+import { format } from 'date-fns'
 import { getAuthenticatedClient, obtenerEventosGoogle } from '@/lib/google-calendar'
 
 export const metadata = { title: 'Agenda — KLIA' }
@@ -17,7 +18,10 @@ export default async function AgendaPage() {
   const inicioSemana = startOfWeek(ahora, { weekStartsOn: 1 })
   const finSemana = endOfWeek(ahora, { weekStartsOn: 1 })
 
-  const [{ data: turnos }, { data: pacientes }, { data: googleTokens }] = await Promise.all([
+  const inicioStr = format(inicioSemana, 'yyyy-MM-dd')
+  const finStr = format(finSemana, 'yyyy-MM-dd')
+
+  const [{ data: turnos }, { data: pacientes }, { data: googleTokens }, { data: entrevistas }] = await Promise.all([
     supabase
       .from('turnos')
       .select('*, paciente:pacientes(*)')
@@ -37,6 +41,13 @@ export default async function AgendaPage() {
       .eq('terapeuta_id', user.id)
       .eq('sync_enabled', true)
       .maybeSingle(),
+    supabase
+      .from('entrevistas')
+      .select('*')
+      .eq('terapeuta_id', user.id)
+      .gte('fecha', inicioStr)
+      .lte('fecha', finStr)
+      .neq('estado', 'cancelada'),
   ])
 
   let googleEventsIniciales: { id: string; titulo: string; inicio: string; fin: string }[] = []
@@ -62,6 +73,7 @@ export default async function AgendaPage() {
         terapeutaId={user.id}
         googleConnected={!!googleTokens}
         googleEventsIniciales={googleEventsIniciales}
+        entrevistasIniciales={(entrevistas ?? []) as Entrevista[]}
       />
     </div>
   )

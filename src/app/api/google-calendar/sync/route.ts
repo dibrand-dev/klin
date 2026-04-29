@@ -5,6 +5,8 @@ import {
   sincronizarTurnoCancelado,
   sincronizarSerieRecurrente,
   sincronizarSerieCancelada,
+  sincronizarEntrevistaCreada,
+  sincronizarEntrevistaCancelada,
 } from '@/lib/sync-google-calendar'
 
 export async function POST(req: NextRequest) {
@@ -16,6 +18,7 @@ export async function POST(req: NextRequest) {
     turno_id?: string
     serie_id?: string
     desde_fecha?: string
+    entrevista_id?: string
     action: 'create' | 'delete'
   }
 
@@ -25,12 +28,16 @@ export async function POST(req: NextRequest) {
         await sincronizarSerieRecurrente(body.serie_id, user.id)
       } else if (body.turno_id) {
         await sincronizarTurnoCreado(body.turno_id, user.id)
+      } else if (body.entrevista_id) {
+        await sincronizarEntrevistaCreada(body.entrevista_id, user.id)
       }
     } else if (body.action === 'delete') {
       if (body.serie_id && body.desde_fecha) {
         await sincronizarSerieCancelada(body.serie_id, user.id, body.desde_fecha)
       } else if (body.turno_id) {
         await sincronizarTurnoCancelado(body.turno_id, user.id)
+      } else if (body.entrevista_id) {
+        await sincronizarEntrevistaCancelada(body.entrevista_id, user.id)
       }
     }
   } catch {
