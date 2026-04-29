@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
 import {
   startOfWeek, endOfWeek, eachDayOfInterval,
-  addWeeks, subWeeks, addDays, subDays, addMonths, subMonths,
+  addWeeks, subWeeks, addMonths, subMonths,
   startOfMonth, endOfMonth,
   format, isSameDay, isToday, parseISO, isBefore, isAfter,
 } from 'date-fns'
@@ -188,16 +188,6 @@ export default function AgendaSemanal({
     }
   }, [terapeutaId])
 
-  function navegarDia(dir: 1 | -1) {
-    const nuevo = dir === 1 ? addDays(diaActual, 1) : subDays(diaActual, 1)
-    setDiaActual(nuevo)
-    const nuevoInicio = startOfWeek(nuevo, { weekStartsOn: 1 })
-    if (!isSameDay(nuevoInicio, inicioSemana)) {
-      setSemanaActual(nuevo)
-      fetchSemana(nuevo)
-    }
-  }
-
   function navegarSemana(dir: 1 | -1) {
     const nueva = dir === 1 ? addWeeks(semanaActual, 1) : subWeeks(semanaActual, 1)
     setSemanaActual(nueva)
@@ -250,7 +240,6 @@ export default function AgendaSemanal({
     const f = parseISO(t.fecha_hora)
     return !isBefore(f, inicioSemana) && !isAfter(f, finSemana)
   })
-  const turnosDia = getTurnosDelDia(diaActual)
 
   // ─── Columna de turnos reutilizable ──────────────────────────
   function ColumnaHoras({ dia, onCeldaClick }: { dia: Date; onCeldaClick: (f: Date) => void }) {
