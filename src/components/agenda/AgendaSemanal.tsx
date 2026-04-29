@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, Suspense } from 'react'
+import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
 import {
   startOfWeek, endOfWeek, eachDayOfInterval,
   addWeeks, subWeeks, addDays, subDays,
@@ -83,6 +83,21 @@ export default function AgendaSemanal({
   const finSemana = endOfWeek(semanaActual, { weekStartsOn: 1 })
   const dias = eachDayOfInterval({ start: inicioSemana, end: finSemana })
 
+  const googleCacheRef = useRef<{ desde: Date; hasta: Date } | null>(null)
+
+  useEffect(() => {
+    if (googleConnected) {
+      const desde = new Date()
+      desde.setMonth(desde.getMonth() - 3)
+      desde.setHours(0, 0, 0, 0)
+      const hasta = new Date()
+      hasta.setMonth(hasta.getMonth() + 3)
+      hasta.setHours(23, 59, 59, 999)
+      googleCacheRef.current = { desde, hasta }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const fetchSemana = useCallback(async (refDate: Date) => {
     const inicio = startOfWeek(refDate, { weekStartsOn: 1 })
     const fin = endOfWeek(refDate, { weekStartsOn: 1 })
@@ -103,15 +118,26 @@ export default function AgendaSemanal({
       .gte('fecha', inicioStr)
       .lte('fecha', finStr)
       .neq('estado', 'cancelada')
-    const googlePromise = googleConnected
+
+    // Solo llama a la API de Google si la semana está fuera del caché cargado al inicio
+    const dentroDelCache = googleCacheRef.current
+      ? inicio >= googleCacheRef.current.desde && fin <= googleCacheRef.current.hasta
+      : false
+    const googlePromise = googleConnected && !dentroDelCache
       ? fetch(`/api/google-calendar/events?start=${inicio.toISOString()}&end=${fin.toISOString()}`)
           .then((r) => r.json() as Promise<GoogleEventSerialized[]>)
           .catch(() => [] as GoogleEventSerialized[])
-      : Promise.resolve([] as GoogleEventSerialized[])
-    const [{ data }, { data: entrevistasData }, gEvents] = await Promise.all([turnosPromise, entrevistasPromise, googlePromise])
+      : Promise.resolve(null)
+
+    const [{ data }, { data: entrevistasData }, gEventsNuevos] = await Promise.all([turnosPromise, entrevistasPromise, googlePromise])
     if (data) setTurnos(data as unknown as Turno[])
     if (entrevistasData) setEntrevistas(entrevistasData as Entrevista[])
-    setGoogleEvents(gEvents)
+    if (gEventsNuevos) {
+      setGoogleEvents((prev) => {
+        const ids = new Set(prev.map((e) => e.id))
+        return [...prev, ...gEventsNuevos.filter((e) => !ids.has(e.id))]
+      })
+    }
   }, [terapeutaId, googleConnected])
 
   function navegarDia(dir: 1 | -1) {

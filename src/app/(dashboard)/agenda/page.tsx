@@ -54,7 +54,13 @@ export default async function AgendaPage() {
   if (googleTokens) {
     try {
       const calendarClient = await getAuthenticatedClient(googleTokens)
-      const eventos = await obtenerEventosGoogle(calendarClient, inicioSemana, finSemana, googleTokens.calendar_id || 'primary')
+      const tresMesesAtras = new Date()
+      tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3)
+      tresMesesAtras.setHours(0, 0, 0, 0)
+      const tresMesesAdelante = new Date()
+      tresMesesAdelante.setMonth(tresMesesAdelante.getMonth() + 3)
+      tresMesesAdelante.setHours(23, 59, 59, 999)
+      const eventos = await obtenerEventosGoogle(calendarClient, tresMesesAtras, tresMesesAdelante, googleTokens.calendar_id || 'primary')
       googleEventsIniciales = eventos.map((e) => ({
         ...e,
         inicio: e.inicio.toISOString(),
