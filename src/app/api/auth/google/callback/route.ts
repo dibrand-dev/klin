@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       { onConflict: 'terapeuta_id' },
     )
 
-    return NextResponse.redirect(`${appUrl}/ajustes/integraciones?google=connected`)
+    return NextResponse.redirect(`${appUrl}/ajustes/integraciones?google=connected&t=${Date.now()}`)
   } catch {
     return NextResponse.redirect(`${appUrl}/ajustes/integraciones?google=error`)
   }

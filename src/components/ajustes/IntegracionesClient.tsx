@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 export default function IntegracionesClient({
   conectado,
@@ -12,8 +12,15 @@ export default function IntegracionesClient({
 }) {
   const searchParams = useSearchParams()
   const googleParam = searchParams.get('google')
+  const router = useRouter()
 
   const [sync, setSync] = useState(syncEnabled)
+
+  useEffect(() => {
+    if (googleParam === 'connected') {
+      router.refresh()
+    }
+  }, [])
   const [desconectando, setDesconectando] = useState(false)
   const [error, setError] = useState<string | null>(
     googleParam === 'error' ? 'No se pudo conectar con Google Calendar. Intentá de nuevo.' : null

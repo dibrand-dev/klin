@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { Suspense } from 'react'
 import IntegracionesClient from '@/components/ajustes/IntegracionesClient'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = { title: 'Integraciones — KLIA' }
 
 export default async function IntegracionesPage() {
