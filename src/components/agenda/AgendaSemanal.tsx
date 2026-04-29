@@ -389,8 +389,7 @@ export default function AgendaSemanal({
         <div className="flex flex-col h-full">
           <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-10">
             <div className="flex items-center gap-2 md:gap-4">
-              <h1 className="text-lg md:text-xl font-semibold text-gray-900">Agenda</h1>
-              <span className="text-xs md:text-sm text-gray-500 capitalize hidden sm:block">
+              <span className="text-lg md:text-xl font-semibold text-gray-900 capitalize">
                 {format(inicioSemana, "d 'de' MMMM", { locale: es })}
                 {' — '}
                 {format(finSemana, "d 'de' MMMM yyyy", { locale: es })}
