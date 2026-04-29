@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect, useRef, Suspense } from 'react'
 import {
   startOfWeek, endOfWeek, eachDayOfInterval,
-  addWeeks, subWeeks, addDays, subDays,
+  addWeeks, subWeeks, addDays, subDays, addMonths, subMonths,
+  startOfMonth, endOfMonth,
   format, isSameDay, isToday, parseISO, isBefore, isAfter,
 } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -17,6 +18,8 @@ import SlideOver from '@/components/ui/SlideOver'
 import NuevoTurnoPageForm from './NuevoTurnoPageForm'
 import TurnoDetalleModal from './TurnoDetalleModal'
 import EntrevistaDetalleModal from './EntrevistaDetalleModal'
+import VistaDia from './VistaDia'
+import VistaMes from './VistaMes'
 
 const HORA_INICIO = 7
 const HORA_FIN = 21
@@ -50,8 +53,10 @@ function getHeight(min: number) {
 export default function AgendaSemanal({
   turnosIniciales, pacientes, terapeutaId, googleConnected = false, googleEventsIniciales = [], entrevistasIniciales = [],
 }: AgendaSemanalProps) {
+  const [vista, setVista] = useState<'dia' | 'semana' | 'mes'>('semana')
   const [semanaActual, setSemanaActual] = useState(new Date())
   const [diaActual, setDiaActual] = useState(new Date())
+  const [mesActual, setMesActual] = useState(new Date())
   const [turnos, setTurnos] = useState<Turno[]>(turnosIniciales)
   const [googleEvents, setGoogleEvents] = useState<GoogleEventSerialized[]>(googleEventsIniciales)
   const [entrevistas, setEntrevistas] = useState<Entrevista[]>(entrevistasIniciales)
@@ -82,6 +87,11 @@ export default function AgendaSemanal({
   const inicioSemana = startOfWeek(semanaActual, { weekStartsOn: 1 })
   const finSemana = endOfWeek(semanaActual, { weekStartsOn: 1 })
   const dias = eachDayOfInterval({ start: inicioSemana, end: finSemana })
+
+  useEffect(() => {
+    if (window.innerWidth < 768) setVista('dia')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const googleCacheRef = useRef<{ desde: Date; hasta: Date } | null>(null)
 
@@ -370,170 +380,116 @@ export default function AgendaSemanal({
         </div>
       )}
 
-      {/* ══════════════ MOBILE: Vista día ══════════════ */}
-      <div className="flex flex-col h-full md:hidden">
+      {/* ══ Vista Día ══ */}
+      {vista === 'dia' && (
+        <VistaDia
+          dia={diaActual}
+          turnos={turnos}
+          entrevistas={entrevistas}
+          googleEvents={googleEvents}
+          onDiaChange={handleDiaChange}
+          onNuevoTurno={abrirNuevoTurno}
+          onTurnoClick={setTurnoSeleccionado}
+          onEntrevistaClick={setEntrevistaSeleccionada}
+          vistaSelector={<ViewSelector />}
+        />
+      )}
 
-        {/* Header mobile */}
-        <div className="bg-white border-b border-gray-200 px-3 py-3 flex items-center gap-2 sticky top-0 z-10">
-          <button onClick={() => navegarDia(-1)} className="p-2 rounded-lg hover:bg-gray-100">
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <button onClick={irAHoy} className="flex-1 text-center">
-            <p className="text-xs text-gray-500 capitalize font-medium">
-              {format(diaActual, 'EEEE', { locale: es })}
-            </p>
-            <div className="flex items-center justify-center gap-1.5">
-              <p className="text-base font-bold text-gray-900 capitalize">
-                {format(diaActual, "d 'de' MMMM", { locale: es })}
-              </p>
-              {isToday(diaActual) && (
-                <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded-full leading-none">
+      {/* ══ Vista Semana ══ */}
+      {vista === 'semana' && (
+        <div className="flex flex-col h-full">
+          <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+            <div className="flex items-center gap-2 md:gap-4">
+              <h1 className="text-lg md:text-xl font-semibold text-gray-900">Agenda</h1>
+              <span className="text-xs md:text-sm text-gray-500 capitalize hidden sm:block">
+                {format(inicioSemana, "d 'de' MMMM", { locale: es })}
+                {' — '}
+                {format(finSemana, "d 'de' MMMM yyyy", { locale: es })}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden">
+                <button onClick={() => navegarSemana(-1)} className="px-2 md:px-3 py-2 hover:bg-gray-50 text-gray-600">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button onClick={irAHoy} className="px-2 md:px-3 py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 border-x border-gray-200">
                   Hoy
-                </span>
-              )}
-            </div>
-          </button>
-
-          <button onClick={() => navegarDia(1)} className="p-2 rounded-lg hover:bg-gray-100">
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
-          <button
-            onClick={() => abrirNuevoTurno(diaActual)}
-            className="btn-primary flex items-center gap-1 px-3 py-2 text-sm"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nuevo
-          </button>
-        </div>
-
-        {/* Stats mobile */}
-        <div className="bg-white border-b border-gray-200 px-4 py-1.5 flex gap-4 text-xs overflow-x-auto">
-          <span className="text-gray-500 whitespace-nowrap">
-            <strong className="text-gray-800">{turnosDia.length}</strong> turno{turnosDia.length !== 1 ? 's' : ''}
-          </span>
-          {turnosDia.filter(t => t.estado === 'realizado').length > 0 && (
-            <span className="text-gray-500 whitespace-nowrap">
-              <strong className="text-green-600">{turnosDia.filter(t => t.estado === 'realizado').length}</strong> realizado{turnosDia.filter(t => t.estado === 'realizado').length !== 1 ? 's' : ''}
-            </span>
-          )}
-          {turnosDia.filter(t => ['pendiente', 'confirmado'].includes(t.estado)).length > 0 && (
-            <span className="text-gray-500 whitespace-nowrap">
-              <strong className="text-yellow-600">
-                {turnosDia.filter(t => ['pendiente', 'confirmado'].includes(t.estado)).length}
-              </strong> pendiente{turnosDia.filter(t => ['pendiente', 'confirmado'].includes(t.estado)).length !== 1 ? 's' : ''}
-            </span>
-          )}
-          {turnosDia.length === 0 && (
-            <span className="text-gray-400">Sin turnos este día</span>
-          )}
-        </div>
-
-        {/* Grilla día mobile */}
-        <div className="flex-1 overflow-auto">
-          <div className="flex">
-            <div className="w-12 flex-shrink-0 bg-white border-r border-gray-200 sticky left-0">
-              {HORAS.map((hora) => (
-                <div key={hora} className="h-16 border-b border-gray-100 flex items-start justify-end pr-1.5 pt-1">
-                  <span className="text-[11px] text-gray-400">{hora}:00</span>
-                </div>
-              ))}
-            </div>
-            <ColumnaHoras dia={diaActual} onCeldaClick={abrirNuevoTurno} />
-          </div>
-        </div>
-      </div>
-
-      {/* ══════════════ DESKTOP: Vista semana ══════════════ */}
-      <div className="hidden md:flex md:flex-col h-full">
-
-        {/* Header desktop */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-gray-900">Agenda</h1>
-            <span className="text-sm text-gray-500 capitalize">
-              {format(inicioSemana, "d 'de' MMMM", { locale: es })}
-              {' — '}
-              {format(finSemana, "d 'de' MMMM yyyy", { locale: es })}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden">
-              <button onClick={() => navegarSemana(-1)} className="px-3 py-2 hover:bg-gray-50 text-gray-600">
+                </button>
+                <button onClick={() => navegarSemana(1)} className="px-2 md:px-3 py-2 hover:bg-gray-50 text-gray-600">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+              <ViewSelector />
+              <button onClick={() => abrirNuevoTurno(new Date())} className="btn-primary flex items-center gap-1 md:gap-2 px-3 py-2 text-sm">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-              </button>
-              <button onClick={irAHoy} className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 border-x border-gray-200">
-                Hoy
-              </button>
-              <button onClick={() => navegarSemana(1)} className="px-3 py-2 hover:bg-gray-50 text-gray-600">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <span className="hidden sm:inline">Nuevo turno</span>
               </button>
             </div>
-            <button onClick={() => abrirNuevoTurno(new Date())} className="btn-primary flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Nuevo turno
-            </button>
           </div>
-        </div>
 
-        {/* Stats desktop */}
-        <div className="bg-white border-b border-gray-200 px-6 py-2 flex items-center gap-6 text-xs text-gray-500">
-          <span><strong className="text-gray-700">{turnosSemana.length}</strong> turnos esta semana</span>
-          <span><strong className="text-green-600">{turnosSemana.filter(t => t.estado === 'realizado').length}</strong> realizados</span>
-          <span><strong className="text-yellow-600">{turnosSemana.filter(t => ['pendiente', 'confirmado'].includes(t.estado)).length}</strong> pendientes</span>
-          <span><strong className="text-red-500">{turnosSemana.filter(t => ['cancelado', 'no_asistio'].includes(t.estado)).length}</strong> cancelados/ausentes</span>
-        </div>
+          <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-2 flex items-center gap-4 md:gap-6 text-xs text-gray-500 overflow-x-auto">
+            <span><strong className="text-gray-700">{turnosSemana.length}</strong> turnos esta semana</span>
+            <span><strong className="text-green-600">{turnosSemana.filter(t => t.estado === 'realizado').length}</strong> realizados</span>
+            <span><strong className="text-yellow-600">{turnosSemana.filter(t => ['pendiente', 'confirmado'].includes(t.estado)).length}</strong> pendientes</span>
+            <span className="hidden md:inline"><strong className="text-red-500">{turnosSemana.filter(t => ['cancelado', 'no_asistio'].includes(t.estado)).length}</strong> cancelados/ausentes</span>
+          </div>
 
-        {/* Grilla semana desktop */}
-        <div className="flex-1 overflow-auto">
-          <div className="flex min-w-[800px]">
-            <div className="w-16 flex-shrink-0 bg-white border-r border-gray-200 sticky left-0 z-10">
-              <div className="h-14 border-b border-gray-200" />
-              {HORAS.map((hora) => (
-                <div key={hora} className="h-16 border-b border-gray-100 flex items-start justify-end pr-2 pt-1">
-                  <span className="text-xs text-gray-400 font-medium">{hora}:00</span>
-                </div>
-              ))}
-            </div>
-
-            {dias.map((dia) => {
-              const esHoy = isToday(dia)
-              return (
-                <div key={dia.toISOString()} className="flex-1 min-w-0 border-r border-gray-200 last:border-r-0">
-                  <div className={cn(
-                    'h-14 border-b border-gray-200 flex flex-col items-center justify-center sticky top-0 z-10 bg-white',
-                    esHoy && 'bg-primary-fixed/20'
-                  )}>
-                    <span className={cn('text-xs font-medium uppercase tracking-wider', esHoy ? 'text-primary' : 'text-gray-500')}>
-                      {format(dia, 'EEE', { locale: es })}
-                    </span>
-                    <span className={cn(
-                      'text-lg font-semibold mt-0.5',
-                      esHoy ? 'w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm' : 'text-gray-900'
-                    )}>
-                      {format(dia, 'd')}
-                    </span>
+          <div className="flex-1 overflow-auto">
+            <div className="flex min-w-[600px]">
+              <div className="w-12 md:w-16 flex-shrink-0 bg-white border-r border-gray-200 sticky left-0 z-10">
+                <div className="h-14 border-b border-gray-200" />
+                {HORAS.map((hora) => (
+                  <div key={hora} className="h-16 border-b border-gray-100 flex items-start justify-end pr-1.5 md:pr-2 pt-1">
+                    <span className="text-[11px] md:text-xs text-gray-400 font-medium">{hora}:00</span>
                   </div>
-                  <ColumnaHoras dia={dia} onCeldaClick={abrirNuevoTurno} />
-                </div>
-              )
-            })}
+                ))}
+              </div>
+              {dias.map((dia) => {
+                const esHoy = isToday(dia)
+                return (
+                  <div key={dia.toISOString()} className="flex-1 min-w-0 border-r border-gray-200 last:border-r-0">
+                    <div className={cn(
+                      'h-14 border-b border-gray-200 flex flex-col items-center justify-center sticky top-0 z-10 bg-white',
+                      esHoy && 'bg-primary-fixed/20'
+                    )}>
+                      <span className={cn('text-[10px] md:text-xs font-medium uppercase tracking-wider', esHoy ? 'text-primary' : 'text-gray-500')}>
+                        {format(dia, 'EEE', { locale: es })}
+                      </span>
+                      <span className={cn(
+                        'text-base md:text-lg font-semibold mt-0.5',
+                        esHoy ? 'w-7 h-7 md:w-8 md:h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm' : 'text-gray-900'
+                      )}>
+                        {format(dia, 'd')}
+                      </span>
+                    </div>
+                    <ColumnaHoras dia={dia} onCeldaClick={abrirNuevoTurno} />
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ══ Vista Mes ══ */}
+      {vista === 'mes' && (
+        <VistaMes
+          mes={mesActual}
+          turnos={turnos}
+          entrevistas={entrevistas}
+          googleEvents={googleEvents}
+          onMesChange={(m) => { setMesActual(m); fetchMes(m) }}
+          onDiaClick={(d) => { setDiaActual(d); setVista('dia') }}
+          onNuevoTurno={abrirNuevoTurno}
+          vistaSelector={<ViewSelector />}
+        />
+      )}
 
       {/* ══ Slide-overs compartidos ══ */}
       <SlideOver
