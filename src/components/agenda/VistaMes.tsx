@@ -35,47 +35,41 @@ export default function VistaMes({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center gap-3 sticky top-0 z-10">
-        <button onClick={() => onMesChange(subMonths(mes, 1))} className="p-2 rounded-lg hover:bg-gray-100">
-          <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-
-        <div className="flex-1 text-center">
-          <p className="text-sm md:text-base font-semibold text-gray-900 capitalize">
+      {/* Header — mismo layout que vista semana */}
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-2 md:gap-4">
+          <p className="text-lg md:text-xl font-semibold text-gray-900 capitalize">
             {format(mes, 'MMMM yyyy', { locale: es })}
           </p>
         </div>
-
-        <button onClick={() => onMesChange(addMonths(mes, 1))} className="p-2 rounded-lg hover:bg-gray-100">
-          <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-
-      {/* View selector + actions row */}
-      <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between gap-4 text-xs">
-        {vistaSelector}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => onMesChange(new Date())}
-            className="text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2"
-          >
-            Hoy
-          </button>
-          <button
-            onClick={() => onNuevoTurno(new Date())}
-            className="btn-primary flex items-center gap-1 px-3 py-1.5 text-xs"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden">
+            <button onClick={() => onMesChange(subMonths(mes, 1))} className="px-2 md:px-3 py-2 hover:bg-gray-50 text-gray-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button onClick={() => onMesChange(new Date())} className="px-2 md:px-3 py-2 text-xs md:text-sm font-medium text-gray-700 hover:bg-gray-50 border-x border-gray-200">
+              Hoy
+            </button>
+            <button onClick={() => onMesChange(addMonths(mes, 1))} className="px-2 md:px-3 py-2 hover:bg-gray-50 text-gray-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+          <button onClick={() => onNuevoTurno(new Date())} className="btn-primary flex items-center gap-1 md:gap-2 px-3 py-2 text-sm">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Nuevo
+            <span className="hidden sm:inline">Nuevo turno</span>
           </button>
         </div>
+      </div>
+
+      {/* Segunda fila: selector */}
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-2 flex items-center gap-4 text-xs text-gray-500">
+        {vistaSelector}
       </div>
 
       {/* Day-of-week headers */}
