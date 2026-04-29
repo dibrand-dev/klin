@@ -140,6 +140,44 @@ export default function AgendaSemanal({
     }
   }, [terapeutaId, googleConnected])
 
+  const fetchMes = useCallback(async (refDate: Date) => {
+    const inicioMes = startOfMonth(refDate)
+    const finMes = endOfMonth(refDate)
+    const inicioGrid = startOfWeek(inicioMes, { weekStartsOn: 1 })
+    const finGrid = endOfWeek(finMes, { weekStartsOn: 1 })
+    const inicioStr = format(inicioGrid, 'yyyy-MM-dd')
+    const finStr = format(finGrid, 'yyyy-MM-dd')
+    const supabase = createClient()
+    const [{ data }, { data: entrevistasData }] = await Promise.all([
+      supabase
+        .from('turnos')
+        .select('*, paciente:pacientes(*)')
+        .eq('terapeuta_id', terapeutaId)
+        .gte('fecha_hora', inicioGrid.toISOString())
+        .lte('fecha_hora', finGrid.toISOString())
+        .order('fecha_hora'),
+      supabase
+        .from('entrevistas')
+        .select('*')
+        .eq('terapeuta_id', terapeutaId)
+        .gte('fecha', inicioStr)
+        .lte('fecha', finStr)
+        .neq('estado', 'cancelada'),
+    ])
+    if (data) {
+      setTurnos((prev) => {
+        const ids = new Set((data as unknown as Turno[]).map((t) => t.id))
+        return [...prev.filter((t) => !ids.has(t.id)), ...(data as unknown as Turno[])]
+      })
+    }
+    if (entrevistasData) {
+      setEntrevistas((prev) => {
+        const ids = new Set((entrevistasData as Entrevista[]).map((e) => e.id))
+        return [...prev.filter((e) => !ids.has(e.id)), ...(entrevistasData as Entrevista[])]
+      })
+    }
+  }, [terapeutaId])
+
   function navegarDia(dir: 1 | -1) {
     const nuevo = dir === 1 ? addDays(diaActual, 1) : subDays(diaActual, 1)
     setDiaActual(nuevo)
