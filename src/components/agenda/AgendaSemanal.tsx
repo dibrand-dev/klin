@@ -31,12 +31,19 @@ type GoogleEventSerialized = {
   fin: string
 }
 
+type GoogleDayEventSerialized = {
+  id: string
+  titulo: string
+  fecha: string
+}
+
 interface AgendaSemanalProps {
   turnosIniciales: Turno[]
   pacientes: Paciente[]
   terapeutaId: string
   googleConnected?: boolean
   googleEventsIniciales?: GoogleEventSerialized[]
+  googleEventsDiaCompletosIniciales?: GoogleDayEventSerialized[]
   entrevistasIniciales?: Entrevista[]
   horaInicio?: number
   horaFin?: number
@@ -52,7 +59,7 @@ function getHeight(min: number) {
 }
 
 export default function AgendaSemanal({
-  turnosIniciales, pacientes, terapeutaId, googleConnected = false, googleEventsIniciales = [], entrevistasIniciales = [],
+  turnosIniciales, pacientes, terapeutaId, googleConnected = false, googleEventsIniciales = [], googleEventsDiaCompletosIniciales = [], entrevistasIniciales = [],
   horaInicio: horaInicioP, horaFin: horaFinP,
 }: AgendaSemanalProps) {
   const hi = horaInicioP ?? DEFAULT_HORA_INICIO
@@ -64,6 +71,7 @@ export default function AgendaSemanal({
   const [mesActual, setMesActual] = useState(new Date())
   const [turnos, setTurnos] = useState<Turno[]>(turnosIniciales)
   const [googleEvents, setGoogleEvents] = useState<GoogleEventSerialized[]>(googleEventsIniciales)
+  const [googleEventsDiaCompleto, setGoogleEventsDiaCompleto] = useState<GoogleDayEventSerialized[]>(googleEventsDiaCompletosIniciales)
   const [entrevistas, setEntrevistas] = useState<Entrevista[]>(entrevistasIniciales)
   const [nuevoFecha, setNuevoFecha] = useState<Date>(new Date())
   const [nuevoOpen, setNuevoOpen] = useState(false)
@@ -140,17 +148,21 @@ export default function AgendaSemanal({
       : false
     const googlePromise = googleConnected && !dentroDelCache
       ? fetch(`/api/google-calendar/events?start=${inicio.toISOString()}&end=${fin.toISOString()}`)
-          .then((r) => r.json() as Promise<GoogleEventSerialized[]>)
-          .catch(() => [] as GoogleEventSerialized[])
+          .then((r) => r.json() as Promise<{ eventosConHora: GoogleEventSerialized[]; eventosDiaCompleto: GoogleDayEventSerialized[] }>)
+          .catch(() => ({ eventosConHora: [] as GoogleEventSerialized[], eventosDiaCompleto: [] as GoogleDayEventSerialized[] }))
       : Promise.resolve(null)
 
-    const [{ data }, { data: entrevistasData }, gEventsNuevos] = await Promise.all([turnosPromise, entrevistasPromise, googlePromise])
+    const [{ data }, { data: entrevistasData }, gDataNueva] = await Promise.all([turnosPromise, entrevistasPromise, googlePromise])
     if (data) setTurnos(data as unknown as Turno[])
     if (entrevistasData) setEntrevistas(entrevistasData as Entrevista[])
-    if (gEventsNuevos) {
+    if (gDataNueva) {
       setGoogleEvents((prev) => {
         const ids = new Set(prev.map((e) => e.id))
-        return [...prev, ...gEventsNuevos.filter((e) => !ids.has(e.id))]
+        return [...prev, ...gDataNueva.eventosConHora.filter((e) => !ids.has(e.id))]
+      })
+      setGoogleEventsDiaCompleto((prev) => {
+        const ids = new Set(prev.map((e) => e.id))
+        return [...prev, ...gDataNueva.eventosDiaCompleto.filter((e) => !ids.has(e.id))]
       })
     }
   }, [terapeutaId, googleConnected])
@@ -245,6 +257,10 @@ export default function AgendaSemanal({
     const f = parseISO(t.fecha_hora)
     return !isBefore(f, inicioSemana) && !isAfter(f, finSemana)
   })
+
+  const showAllDayRow = googleEventsDiaCompleto.some((e) =>
+    dias.some((dia) => isSameDay(parseISO(e.fecha + 'T12:00:00'), dia))
+  )
 
   // ─── Columna de turnos reutilizable ──────────────────────────
   function ColumnaHoras({ dia, onCeldaClick }: { dia: Date; onCeldaClick: (f: Date) => void }) {
@@ -441,6 +457,7 @@ export default function AgendaSemanal({
             <div className="flex min-w-[600px]">
               <div className="w-12 md:w-16 flex-shrink-0 bg-white border-r border-gray-200 sticky left-0 z-10">
                 <div className="h-14 border-b border-gray-200" />
+                {showAllDayRow && <div className="h-8 border-b border-gray-100" />}
                 {HORAS.map((hora) => (
                   <div key={hora} className="h-16 border-b border-gray-100 flex items-start justify-end pr-1.5 md:pr-2 pt-1">
                     <span className="text-[11px] md:text-xs text-gray-400 font-medium">{hora}:00</span>
@@ -449,6 +466,9 @@ export default function AgendaSemanal({
               </div>
               {dias.map((dia) => {
                 const esHoy = isToday(dia)
+                const dayAllDayEvents = showAllDayRow
+                  ? googleEventsDiaCompleto.filter((e) => isSameDay(parseISO(e.fecha + 'T12:00:00'), dia))
+                  : []
                 return (
                   <div key={dia.toISOString()} className="flex-1 min-w-0 border-r border-gray-200 last:border-r-0">
                     <div className={cn(
@@ -465,6 +485,18 @@ export default function AgendaSemanal({
                         {format(dia, 'd')}
                       </span>
                     </div>
+                    {showAllDayRow && (
+                      <div className="h-8 border-b border-gray-100 flex items-center gap-1 px-1 overflow-hidden">
+                        {dayAllDayEvents.slice(0, 2).map((ev) => (
+                          <span key={ev.id} className="text-xs bg-gray-100 text-gray-500 rounded px-2 py-0.5 truncate">
+                            {ev.titulo}
+                          </span>
+                        ))}
+                        {dayAllDayEvents.length > 2 && (
+                          <span className="text-xs text-gray-400 flex-shrink-0">+{dayAllDayEvents.length - 2}</span>
+                        )}
+                      </div>
+                    )}
                     <ColumnaHoras dia={dia} onCeldaClick={abrirNuevoTurno} />
                   </div>
                 )

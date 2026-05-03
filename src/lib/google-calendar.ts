@@ -93,12 +93,18 @@ export type GoogleEventItem = {
   fin: Date
 }
 
+export type GoogleDayEventItem = {
+  id: string
+  titulo: string
+  fecha: string // 'YYYY-MM-DD'
+}
+
 export async function obtenerEventosGoogle(
   calendarClient: calendar_v3.Calendar,
   fechaInicio: Date,
   fechaFin: Date,
   calendarId = 'primary',
-): Promise<GoogleEventItem[]> {
+): Promise<{ eventosConHora: GoogleEventItem[]; eventosDiaCompleto: GoogleDayEventItem[] }> {
   const response = await calendarClient.events.list({
     calendarId,
     timeMin: fechaInicio.toISOString(),
@@ -107,12 +113,24 @@ export async function obtenerEventosGoogle(
     orderBy: 'startTime',
   })
 
-  return (response.data.items ?? [])
-    .filter((e) => e.id && (e.start?.dateTime || e.start?.date))
+  const items = response.data.items ?? []
+
+  const eventosConHora: GoogleEventItem[] = items
+    .filter((e) => e.id && e.start?.dateTime)
     .map((e) => ({
       id: e.id!,
       titulo: e.summary || 'Ocupado',
-      inicio: new Date(e.start!.dateTime ?? e.start!.date!),
+      inicio: new Date(e.start!.dateTime!),
       fin: new Date(e.end!.dateTime ?? e.end!.date!),
     }))
+
+  const eventosDiaCompleto: GoogleDayEventItem[] = items
+    .filter((e) => e.id && e.start?.date && !e.start?.dateTime)
+    .map((e) => ({
+      id: e.id!,
+      titulo: e.summary || '',
+      fecha: e.start!.date!,
+    }))
+
+  return { eventosConHora, eventosDiaCompleto }
 }

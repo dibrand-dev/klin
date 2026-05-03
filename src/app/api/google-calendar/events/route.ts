@@ -5,12 +5,12 @@ import { getAuthenticatedClient, obtenerEventosGoogle } from '@/lib/google-calen
 export async function GET(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json([])
+  if (!user) return NextResponse.json({ eventosConHora: [], eventosDiaCompleto: [] })
 
   const { searchParams } = new URL(req.url)
   const start = searchParams.get('start')
   const end = searchParams.get('end')
-  if (!start || !end) return NextResponse.json([])
+  if (!start || !end) return NextResponse.json({ eventosConHora: [], eventosDiaCompleto: [] })
 
   const { data: tokens } = await supabase
     .from('google_calendar_tokens')
@@ -19,22 +19,25 @@ export async function GET(req: NextRequest) {
     .eq('sync_enabled', true)
     .single()
 
-  if (!tokens) return NextResponse.json([])
+  if (!tokens) return NextResponse.json({ eventosConHora: [], eventosDiaCompleto: [] })
 
   try {
     const calendarClient = await getAuthenticatedClient(tokens)
-    const eventos = await obtenerEventosGoogle(
+    const { eventosConHora, eventosDiaCompleto } = await obtenerEventosGoogle(
       calendarClient,
       new Date(start),
       new Date(end),
       tokens.calendar_id || 'primary',
     )
-    return NextResponse.json(eventos.map((e) => ({
-      ...e,
-      inicio: e.inicio.toISOString(),
-      fin: e.fin.toISOString(),
-    })))
+    return NextResponse.json({
+      eventosConHora: eventosConHora.map((e) => ({
+        ...e,
+        inicio: e.inicio.toISOString(),
+        fin: e.fin.toISOString(),
+      })),
+      eventosDiaCompleto,
+    })
   } catch {
-    return NextResponse.json([])
+    return NextResponse.json({ eventosConHora: [], eventosDiaCompleto: [] })
   }
 }

@@ -52,6 +52,7 @@ export default async function AgendaPage() {
   ])
 
   let googleEventsIniciales: { id: string; titulo: string; inicio: string; fin: string }[] = []
+  let googleEventsDiaCompletosIniciales: { id: string; titulo: string; fecha: string }[] = []
   if (googleTokens) {
     try {
       const calendarClient = await getAuthenticatedClient(googleTokens)
@@ -61,12 +62,13 @@ export default async function AgendaPage() {
       const tresMesesAdelante = new Date()
       tresMesesAdelante.setMonth(tresMesesAdelante.getMonth() + 3)
       tresMesesAdelante.setHours(23, 59, 59, 999)
-      const eventos = await obtenerEventosGoogle(calendarClient, tresMesesAtras, tresMesesAdelante, googleTokens.calendar_id || 'primary')
-      googleEventsIniciales = eventos.map((e) => ({
+      const { eventosConHora, eventosDiaCompleto } = await obtenerEventosGoogle(calendarClient, tresMesesAtras, tresMesesAdelante, googleTokens.calendar_id || 'primary')
+      googleEventsIniciales = eventosConHora.map((e) => ({
         ...e,
         inicio: e.inicio.toISOString(),
         fin: e.fin.toISOString(),
       }))
+      googleEventsDiaCompletosIniciales = eventosDiaCompleto
     } catch {
       // Google Calendar fetch errors are non-fatal
     }
@@ -80,6 +82,7 @@ export default async function AgendaPage() {
         terapeutaId={user.id}
         googleConnected={!!googleTokens}
         googleEventsIniciales={googleEventsIniciales}
+        googleEventsDiaCompletosIniciales={googleEventsDiaCompletosIniciales}
         entrevistasIniciales={(entrevistas ?? []) as Entrevista[]}
         horaInicio={profile?.agenda_hora_inicio ?? 7}
         horaFin={profile?.agenda_hora_fin ?? 21}
