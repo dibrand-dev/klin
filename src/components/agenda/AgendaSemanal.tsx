@@ -265,7 +265,14 @@ export default function AgendaSemanal({
   // ─── Columna de turnos reutilizable ──────────────────────────
   function ColumnaHoras({ dia, onCeldaClick }: { dia: Date; onCeldaClick: (f: Date) => void }) {
     const lista = getTurnosDelDia(dia)
-    const gEventsDia = googleEvents.filter((e) => isSameDay(new Date(e.inicio), dia))
+    const gEventsDia = googleEvents.filter((e) => {
+      if (!isSameDay(new Date(e.inicio), dia)) return false
+      const inicio = new Date(e.inicio)
+      const fin = new Date(e.fin)
+      const inicioH = inicio.getHours() + inicio.getMinutes() / 60
+      const finH = fin.getHours() + fin.getMinutes() / 60
+      return inicioH < hf && finH > hi
+    })
     const entrevistasDia = entrevistas.filter(
       (e) => isSameDay(parseISO(e.fecha + 'T12:00:00'), dia) && e.estado !== 'cancelada'
     )
@@ -286,9 +293,10 @@ export default function AgendaSemanal({
         {gEventsDia.map((ev) => {
           const inicio = new Date(ev.inicio)
           const fin = new Date(ev.fin)
-          const top = ((inicio.getHours() - hi) * 60 + inicio.getMinutes()) * (64 / 60)
-          const durMin = (fin.getTime() - inicio.getTime()) / 60000
-          const height = Math.max(durMin * (64 / 60), 20)
+          const inicioH = Math.max(inicio.getHours() + inicio.getMinutes() / 60, hi)
+          const finH = Math.min(fin.getHours() + fin.getMinutes() / 60, hf)
+          const top = (inicioH - hi) * 64
+          const height = Math.max((finH - inicioH) * 64, 20)
           return (
             <div
               key={ev.id}
