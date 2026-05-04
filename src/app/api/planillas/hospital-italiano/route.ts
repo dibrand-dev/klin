@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       .eq('id', paciente_id)
       .single(),
     svc.from('profiles')
-      .select('nombre, apellido, domicilio')
+      .select('nombre, apellido')
       .eq('id', user.id)
       .single(),
     svc.from('profesional_obras_sociales')
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     pdfBuffer = await generarPlanillaHospitalItaliano({
       anio: anio.toString(),
       prestador: `${profile.apellido} ${profile.nombre}`.toUpperCase(),
-      domicilio: osConfig?.domicilio_os ?? profile.domicilio ?? '',
+      domicilio: osConfig?.domicilio_os ?? '',
       afiliado: `${paciente.apellido} ${paciente.nombre}`.toUpperCase(),
       numeroSocio: paciente.numero_afiliado ?? '',
       tratamiento: osConfig?.descripcion_practica ?? osConfig?.nombre ?? '',
