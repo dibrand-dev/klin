@@ -94,7 +94,18 @@ export async function POST(req: NextRequest) {
     return { dia, mes: mesDia, horaInicio, horaFin }
   })
 
-  // 7. Generate PDF
+  // 7. Fetch OS logo from storage
+  let logoUrl: string | undefined
+  {
+    const { data: logoFiles } = await svc.storage.from('obras-sociales').list('logos', { search: os_config_id })
+    const logoFile = (logoFiles ?? []).find((f) => f.name.startsWith(os_config_id))
+    if (logoFile) {
+      const { data } = svc.storage.from('obras-sociales').getPublicUrl(`logos/${logoFile.name}`)
+      logoUrl = data.publicUrl
+    }
+  }
+
+  // 8. Generate PDF
   let pdfBuffer: Buffer
   try {
     pdfBuffer = await generarPlanillaHospitalItaliano({
@@ -107,6 +118,7 @@ export async function POST(req: NextRequest) {
       mes: MESES[mes - 1],
       numeroAutorizacion: paciente.numero_autorizacion ?? '',
       sesiones,
+      logoUrl,
     })
   } catch (err) {
     console.error('[planilla/hospital-italiano] PDF generation failed:', err)
@@ -116,7 +128,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 8. Return PDF
+  // 9. Return PDF
   const filename = `Planilla_${paciente.apellido}_${MESES[mes - 1]}.pdf`
   return new Response(new Uint8Array(pdfBuffer), {
     status: 200,
