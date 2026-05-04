@@ -94,6 +94,7 @@ function drawLabeledLine(
   width: number,
   label: string,
   value: string,
+  leftAlign = false,
 ) {
   const FS = 9
   const baseY = yb(kitY, FS)
@@ -102,17 +103,34 @@ function drawLabeledLine(
   const labelW = fonts.reg.widthOfTextAtSize(label, FS)
 
   const valW = fonts.bold.widthOfTextAtSize(value, FS)
-  page.drawText(value, { x: x + width - valW, y: baseY, font: fonts.bold, size: FS, color: C_BLACK })
 
-  const dotX1 = x + labelW + 4
-  const dotX2 = x + width - valW - 4
-  if (dotX2 > dotX1 + 4) {
-    page.drawLine({
-      start: { x: dotX1, y: baseY + 1 },
-      end:   { x: dotX2, y: baseY + 1 },
-      thickness: 0.4, color: C_MUTED,
-      dashArray: [1, 2.5], dashPhase: 0,
-    })
+  if (leftAlign) {
+    // Value placed immediately after label with one space gap
+    const spaceW = fonts.reg.widthOfTextAtSize(' ', FS)
+    const valX = x + labelW + spaceW
+    page.drawText(value, { x: valX, y: baseY, font: fonts.bold, size: FS, color: C_BLACK })
+    const dotX1 = valX + valW + 4
+    const dotX2 = x + width
+    if (dotX2 > dotX1 + 4) {
+      page.drawLine({
+        start: { x: dotX1, y: baseY + 1 },
+        end:   { x: dotX2, y: baseY + 1 },
+        thickness: 0.4, color: C_MUTED,
+        dashArray: [1, 2.5], dashPhase: 0,
+      })
+    }
+  } else {
+    page.drawText(value, { x: x + width - valW, y: baseY, font: fonts.bold, size: FS, color: C_BLACK })
+    const dotX1 = x + labelW + 4
+    const dotX2 = x + width - valW - 4
+    if (dotX2 > dotX1 + 4) {
+      page.drawLine({
+        start: { x: dotX1, y: baseY + 1 },
+        end:   { x: dotX2, y: baseY + 1 },
+        thickness: 0.4, color: C_MUTED,
+        dashArray: [1, 2.5], dashPhase: 0,
+      })
+    }
   }
 }
 
@@ -239,7 +257,7 @@ function renderFirstPage(
   const FH = 18
   const FS = 9
 
-  drawLabeledLine(page, fonts, L, FY,      W, 'Nombre y apellido del prestador/Razon Social:', datos.prestador)
+  drawLabeledLine(page, fonts, L, FY,      W, 'Nombre y apellido del prestador/Razon Social:', datos.prestador, true)
   drawLabeledLine(page, fonts, L, FY + FH, W, 'Domicilio donde realiza la Prestacion:', datos.domicilio)
 
   // Field 3: afiliado + n° socio (inline segments)
