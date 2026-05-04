@@ -95,17 +95,26 @@ export async function POST(req: NextRequest) {
   })
 
   // 7. Generate PDF
-  const pdfBuffer = await generarPlanillaHospitalItaliano({
-    anio: anio.toString(),
-    prestador: `${profile.apellido} ${profile.nombre}`.toUpperCase(),
-    domicilio: osConfig?.domicilio_os ?? '',
-    afiliado: `${paciente.apellido} ${paciente.nombre}`.toUpperCase(),
-    numeroSocio: paciente.numero_afiliado ?? '',
-    tratamiento: osConfig?.descripcion_practica ?? osConfig?.nombre ?? '',
-    mes: MESES[mes - 1],
-    numeroAutorizacion: paciente.numero_autorizacion ?? '',
-    sesiones,
-  })
+  let pdfBuffer: Buffer
+  try {
+    pdfBuffer = await generarPlanillaHospitalItaliano({
+      anio: anio.toString(),
+      prestador: `${profile.apellido} ${profile.nombre}`.toUpperCase(),
+      domicilio: osConfig?.domicilio_os ?? '',
+      afiliado: `${paciente.apellido} ${paciente.nombre}`.toUpperCase(),
+      numeroSocio: paciente.numero_afiliado ?? '',
+      tratamiento: osConfig?.descripcion_practica ?? osConfig?.nombre ?? '',
+      mes: MESES[mes - 1],
+      numeroAutorizacion: paciente.numero_autorizacion ?? '',
+      sesiones,
+    })
+  } catch (err) {
+    console.error('[planilla/hospital-italiano] PDF generation failed:', err)
+    return NextResponse.json(
+      { error: 'Error al generar el PDF', detail: err instanceof Error ? err.message : String(err) },
+      { status: 500 },
+    )
+  }
 
   // 8. Return PDF
   const filename = `Planilla_${paciente.apellido}_${MESES[mes - 1]}.pdf`
