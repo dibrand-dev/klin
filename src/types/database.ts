@@ -11,6 +11,8 @@ export type Database = {
           especialidad: string | null
           telefono: string | null
           domicilio: string | null
+          firma_url: string | null
+          firma_sello_url: string | null
           plan: 'esencial' | 'profesional' | 'premium' | 'bonificado'
           estado_cuenta: 'trial' | 'activa' | 'bloqueada' | 'cancelada'
           trial_inicio: string
@@ -104,6 +106,7 @@ export type Database = {
           os_config_id: string | null
           autorizacion_vigencia_desde: string | null
           autorizacion_vigencia_hasta: string | null
+          firma_paciente_url: string | null
           created_at: string
           updated_at: string
         }

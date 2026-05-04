@@ -11,6 +11,7 @@ import type { PacienteTabKey } from './PacienteTabs'
 import { PAISES, PLANES_POR_OS } from '@/lib/data/salud-ar'
 import { OBRAS_SOCIALES } from '@/lib/obras-sociales'
 import SlideOver from '@/components/ui/SlideOver'
+import FirmaUploader from '@/components/ui/FirmaUploader'
 
 const inputCls =
   'w-full bg-surface-container-high border border-outline-variant/15 text-on-surface rounded-lg px-4 py-3 text-sm focus:bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none'
@@ -771,6 +772,8 @@ export default function PacienteDetalle({
           ]}
         />
       </KlinCard>
+
+      <FirmaPacienteCard paciente={paciente} />
     </div>
   )
 }
@@ -942,6 +945,33 @@ function FormCard({
       </h3>
       {children}
     </div>
+  )
+}
+
+function FirmaPacienteCard({ paciente }: { paciente: Paciente }) {
+  const [firmaUrl, setFirmaUrl] = useState<string | null>(paciente.firma_paciente_url ?? null)
+  const supabase = createClient()
+
+  async function guardar(url: string | null) {
+    await supabase.from('pacientes').update({ firma_paciente_url: url }).eq('id', paciente.id)
+  }
+
+  return (
+    <KlinCard title="Firma del paciente / tutor">
+      <p className="text-xs text-on-surface-variant mb-4">
+        Usada en planillas de asistencia de obras sociales.
+      </p>
+      <FirmaUploader
+        label="Firma del paciente o tutor"
+        descripcion="Fotografiá la firma sobre papel blanco con tinta negra"
+        instrucciones="Fotografiá la firma sobre papel blanco con tinta negra. Recortá la imagen para que solo muestre la firma."
+        firmaUrl={firmaUrl}
+        bucket="firmas-pacientes"
+        storagePath={`${paciente.terapeuta_id}/${paciente.id}/firma`}
+        onUpload={(url) => { setFirmaUrl(url); guardar(url) }}
+        onDelete={() => { setFirmaUrl(null); guardar(null) }}
+      />
+    </KlinCard>
   )
 }
 

@@ -47,11 +47,11 @@ export async function POST(req: NextRequest) {
     { data: osConfig },
   ] = await Promise.all([
     svc.from('pacientes')
-      .select('nombre, apellido, numero_afiliado, numero_autorizacion')
+      .select('nombre, apellido, numero_afiliado, numero_autorizacion, firma_paciente_url')
       .eq('id', paciente_id)
       .single(),
     svc.from('profiles')
-      .select('nombre, apellido')
+      .select('nombre, apellido, firma_sello_url')
       .eq('id', user.id)
       .single(),
     svc.from('profesional_obras_sociales')
@@ -91,7 +91,11 @@ export async function POST(req: NextRequest) {
     const finDate = new Date(argDate.getTime() + t.duracion_min * 60 * 1000)
     const horaFin = `${finDate.getUTCHours().toString().padStart(2, '0')}:${finDate.getUTCMinutes().toString().padStart(2, '0')}`
 
-    return { dia, mes: mesDia, horaInicio, horaFin }
+    return {
+      dia, mes: mesDia, horaInicio, horaFin,
+      firmaProfesionalUrl: profile?.firma_sello_url ?? undefined,
+      firmaPacienteUrl: paciente?.firma_paciente_url ?? undefined,
+    }
   })
 
   // 7. Fetch OS logo from storage
