@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -112,11 +113,17 @@ export default function DashboardClient({
   const totalSesionesHoy = turnosHoy.length + entrevistasHoy.length
   const realizadasHoy = turnosHoy.filter((t) => t.estado === 'realizado').length
 
-  // Find next upcoming turno (first pending/confirmado)
-  const ahora = new Date()
-  const proximoTurno = turnosHoy.find(
-    (t) => (t.estado === 'pendiente' || t.estado === 'confirmado') && new Date(t.fecha_hora) >= ahora,
-  )
+  // Client-only: computed after hydration to avoid server/client time mismatch
+  const [greeting, setGreeting] = useState('')
+  const [proximoTurnoId, setProximoTurnoId] = useState<string | null>(null)
+  useEffect(() => {
+    setGreeting(saludo())
+    const ahora = new Date()
+    const next = turnosHoy.find(
+      (t) => (t.estado === 'pendiente' || t.estado === 'confirmado') && new Date(t.fecha_hora) >= ahora,
+    )
+    setProximoTurnoId(next?.id ?? null)
+  }, [turnosHoy])
 
   // Income chart
   const totalIngresosChart = ingresosPorOrigen.reduce((a, b) => a + b.monto, 0)
@@ -131,8 +138,8 @@ export default function DashboardClient({
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {saludo()}, {nombreTerapeuta} 👋
+          <h1 className="text-2xl font-bold text-gray-900" suppressHydrationWarning>
+            {greeting ? `${greeting}, ${nombreTerapeuta} 👋` : `Hola, ${nombreTerapeuta} 👋`}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">{fechaHoyCapitalizada}</p>
         </div>
@@ -197,7 +204,7 @@ export default function DashboardClient({
               )}
 
               {turnosHoy.map((t) => {
-                const isProximo = t.id === proximoTurno?.id
+                const isProximo = t.id === proximoTurnoId
                 const st = estadoTurno(t.estado)
                 return (
                   <div
