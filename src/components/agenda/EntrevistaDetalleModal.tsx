@@ -14,6 +14,7 @@ interface EntrevistaDetalleModalProps {
   entrevista: Entrevista
   onClose: () => void
   onEntrevistaActualizada: (e: Entrevista) => void
+  onEliminar?: (id: string) => void
 }
 
 const ESTADOS = ['pendiente', 'realizada', 'cancelada'] as const
@@ -29,6 +30,7 @@ export default function EntrevistaDetalleModal({
   entrevista,
   onClose,
   onEntrevistaActualizada,
+  onEliminar,
 }: EntrevistaDetalleModalProps) {
   const router = useRouter()
   const [estado, setEstado] = useState(entrevista.estado)
@@ -37,6 +39,7 @@ export default function EntrevistaDetalleModal({
   const [confirmConvertir, setConfirmConvertir] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false)
   const [editando, setEditando] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -394,6 +397,44 @@ export default function EntrevistaDetalleModal({
             >
               {cambiandoEstado ? 'Cancelando...' : 'Cancelar entrevista'}
             </button>
+          </div>
+        )}
+
+        {/* Eliminar entrevista */}
+        {onEliminar && !yaConvertida && (
+          <div className="pt-3 border-t border-gray-100">
+            {confirmarEliminar ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+                <p className="text-sm text-red-800 font-medium">
+                  ¿Eliminar esta entrevista definitivamente?
+                </p>
+                <p className="text-xs text-red-700">
+                  Se eliminará de la agenda{entrevista.google_event_id ? ' y de Google Calendar' : ''}.
+                  Esta acción no se puede deshacer.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setConfirmarEliminar(false)}
+                    className="btn-secondary flex-1 py-2 text-sm"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => onEliminar(entrevista.id)}
+                    className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-colors"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmarEliminar(true)}
+                className="w-full text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+              >
+                Eliminar entrevista
+              </button>
+            )}
           </div>
         )}
       </div>

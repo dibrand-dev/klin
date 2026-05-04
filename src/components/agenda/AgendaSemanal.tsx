@@ -555,6 +555,17 @@ export default function AgendaSemanal({
             setEntrevistas((prev) => prev.map((e) => e.id === updated.id ? updated : e))
             setEntrevistaSeleccionada(updated.estado === 'cancelada' ? null : updated)
           }}
+          onEliminar={async (id) => {
+            fetch('/api/google-calendar/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ entrevista_id: id, action: 'delete' }),
+            }).catch(() => {})
+            const supabase = createClient()
+            await supabase.from('entrevistas').delete().eq('id', id)
+            setEntrevistas((prev) => prev.filter((e) => e.id !== id))
+            setEntrevistaSeleccionada(null)
+          }}
         />
       )}
 
