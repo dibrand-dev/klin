@@ -10,6 +10,7 @@ import type { Paciente, MedicacionPaciente, Interconsulta, ProfesionalObraSocial
 import type { PacienteTabKey } from './PacienteTabs'
 import { PAISES, PLANES_POR_OS } from '@/lib/data/salud-ar'
 import { OBRAS_SOCIALES } from '@/lib/obras-sociales'
+import SlideOver from '@/components/ui/SlideOver'
 
 const inputCls =
   'w-full bg-surface-container-high border border-outline-variant/15 text-on-surface rounded-lg px-4 py-3 text-sm focus:bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none'
@@ -680,7 +681,7 @@ export default function PacienteDetalle({
   }
 
   if (activeTab === 'facturacion') {
-    return <AsistenciaTab paciente={paciente} turnos={turnos} />
+    return <AsistenciaTab paciente={paciente} turnos={turnos} profObrasSociales={profObrasSociales} />
   }
 
   if (activeTab && activeTab !== 'datos') {
@@ -1001,7 +1002,7 @@ const MESES_NOMBRES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
 
-function AsistenciaTab({ paciente, turnos }: { paciente: Paciente; turnos: TurnoRow[] }) {
+function AsistenciaTab({ paciente, turnos, profObrasSociales = [] }: { paciente: Paciente; turnos: TurnoRow[]; profObrasSociales?: ProfesionalObraSocial[] }) {
   const router = useRouter()
   const now = new Date()
   const [mes, setMes] = useState(now.getMonth())
@@ -1009,6 +1010,12 @@ function AsistenciaTab({ paciente, turnos }: { paciente: Paciente; turnos: Turno
   const [showConfirm, setShowConfirm] = useState(false)
   const [pagando, setPagando] = useState(false)
   const [mesPagado, setMesPagado] = useState(false)
+  const [planillaOpen, setPlanillaOpen] = useState(false)
+  const [generando, setGenerando] = useState(false)
+  const [planillaError, setPlanillaError] = useState<string | null>(null)
+
+  const osConfig = profObrasSociales.find((o) => o.id === paciente.os_config_id)
+  const tienePlanilla = !!paciente.os_config_id && !!osConfig
 
   const turnosMes = turnos.filter((t) => {
     const d = new Date(t.fecha_hora)
@@ -1044,6 +1051,34 @@ function AsistenciaTab({ paciente, turnos }: { paciente: Paciente; turnos: Turno
     setShowConfirm(false)
     setMesPagado(true)
     router.refresh()
+  }
+
+  async function handleGenerarPlanilla() {
+    if (!paciente.os_config_id) return
+    setGenerando(true)
+    setPlanillaError(null)
+    try {
+      const res = await fetch('/api/planillas/hospital-italiano', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paciente_id: paciente.id, mes: mes + 1, anio, os_config_id: paciente.os_config_id }),
+      })
+      if (!res.ok) throw new Error('Error al generar la planilla')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Planilla_${paciente.apellido}_${MESES_NOMBRES[mes]}_${anio}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      setPlanillaOpen(false)
+    } catch {
+      setPlanillaError('No se pudo generar la planilla. Intentá de nuevo.')
+    } finally {
+      setGenerando(false)
+    }
   }
 
   const anioActual = now.getFullYear()
@@ -1176,6 +1211,115 @@ function AsistenciaTab({ paciente, turnos }: { paciente: Paciente; turnos: Turno
           )}
         </div>
       )}
+
+      {/* Planilla de asistencia */}
+      {tienePlanilla && (
+        <div className="bg-white rounded-2xl border border-outline-variant/20 shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">
+                Planilla de asistencia
+              </h3>
+              <p className="text-sm text-on-surface-variant">
+                {osConfig?.nombre} — genera el PDF para adjuntar a la factura
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPlanillaOpen(true)}
+              className="btn-secondary px-4 py-2 text-sm flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-base">picture_as_pdf</span>
+              Generar planilla
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SlideOver planilla */}
+      <SlideOver
+        open={planillaOpen}
+        onClose={() => { setPlanillaOpen(false); setPlanillaError(null) }}
+        title="Planilla de asistencia"
+        subtitle={osConfig?.nombre ?? ''}
+      >
+        <div className="space-y-6">
+          <p className="text-sm text-on-surface-variant">
+            Seleccioná el mes y año para generar la planilla con las sesiones registradas.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-2">Mes</label>
+              <select
+                value={mes}
+                onChange={(e) => setMes(Number(e.target.value))}
+                className="input-field text-sm py-2 w-full"
+              >
+                {MESES_NOMBRES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-2">Año</label>
+              <select
+                value={anio}
+                onChange={(e) => setAnio(Number(e.target.value))}
+                className="input-field text-sm py-2 w-full"
+              >
+                {anios.map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {paciente.numero_afiliado && (
+            <div className="bg-surface-container-lowest rounded-xl p-4 space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Afiliado</span>
+                <span className="font-medium text-on-surface">{paciente.apellido}, {paciente.nombre}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">N° socio</span>
+                <span className="font-medium text-on-surface">{paciente.numero_afiliado}</span>
+              </div>
+              {paciente.numero_autorizacion && (
+                <div className="flex justify-between">
+                  <span className="text-on-surface-variant">N° autorización</span>
+                  <span className="font-medium text-on-surface">{paciente.numero_autorizacion}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!paciente.numero_afiliado && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
+              ⚠️ El paciente no tiene N° de afiliado cargado. Completalo en la pestaña Datos antes de generar la planilla.
+            </div>
+          )}
+
+          {planillaError && (
+            <p className="text-sm text-red-600">{planillaError}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleGenerarPlanilla}
+            disabled={generando}
+            className={cn('btn-primary w-full py-3 text-sm flex items-center justify-center gap-2', generando && 'opacity-70')}
+          >
+            {generando ? (
+              <>
+                <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+                Generando PDF...
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-base">download</span>
+                Descargar planilla {MESES_NOMBRES[mes]} {anio}
+              </>
+            )}
+          </button>
+        </div>
+      </SlideOver>
     </div>
   )
 }

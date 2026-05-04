@@ -1,6 +1,7 @@
 import { requireAdminUser } from '@/lib/ops/auth'
 import { createClient } from '@/lib/supabase/server'
 import ObrasSocialesTable from '@/components/ops/ObrasSocialesTable'
+import PlanillaConfigPanel from '@/components/ops/PlanillaConfigPanel'
 
 export const metadata = { title: 'Obras Sociales — Klia Ops' }
 
@@ -47,6 +48,17 @@ export default async function ObrasSocialesPage() {
           </div>
         </section>
       )}
+
+      {/* Planillas de asistencia */}
+      <section>
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-on-surface-variant uppercase tracking-widest">Planillas de asistencia</h2>
+          <p className="text-xs text-on-surface-variant/60 mt-1">
+            Asociá el logo y el formato de planilla a cada obra social validada.
+          </p>
+        </div>
+        <PlanillaConfigPanel obras={activas ?? []} />
+      </section>
     </div>
   )
 }
