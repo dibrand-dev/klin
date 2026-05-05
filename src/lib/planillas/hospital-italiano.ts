@@ -202,8 +202,8 @@ function drawRow(
   const drawSig = (url: string | undefined, colIdx: number) => {
     if (!url || !imgCache[url]) return
     const img = imgCache[url]!
-    const sigMaxW = COL_W[colIdx] - 6
-    const sigMaxH = 58
+    const sigMaxW = COL_W[colIdx] - 2
+    const sigMaxH = 63
     const dims = imgScale(img, sigMaxW, sigMaxH)
     const xCentered = COL_X[colIdx] + (COL_W[colIdx] - dims.width) / 2
     const yOffset = (ROW_H - dims.height) / 2
