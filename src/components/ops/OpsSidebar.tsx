@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/ops/prestadores', label: 'Prestadores', icon: 'groups' },
   { href: '/ops/facturacion', label: 'Facturación', icon: 'payments' },
   { href: '/ops/obras-sociales', label: 'Obras Sociales', icon: 'health_and_safety' },
+  { href: '/ops/planillas', label: 'Plantillas', icon: 'description' },
 ]
 
 const NAV_ITEMS_TOTAL = [

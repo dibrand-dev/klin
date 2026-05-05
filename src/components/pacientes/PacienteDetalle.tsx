@@ -1085,15 +1085,33 @@ function AsistenciaTab({ paciente, turnos, profObrasSociales = [] }: { paciente:
 
   async function handleGenerarPlanilla() {
     if (!paciente.os_config_id) return
+    if (!osConfig) { setPlanillaError('Esta obra social no tiene plantilla configurada. Contactá al soporte de KLIA.'); return }
+
+    const body = JSON.stringify({ paciente_id: paciente.id, mes: mes + 1, anio, os_config_id: paciente.os_config_id })
+    const headers = { 'Content-Type': 'application/json' }
+
+    // Determine which endpoint to use
+    const hasTemplate = !!osConfig.planilla_template_id
+    const esHospitalItaliano = osConfig.nombre.toLowerCase().includes('hospital italiano')
+    const endpoint = hasTemplate
+      ? '/api/planillas/generar'
+      : esHospitalItaliano
+        ? '/api/planillas/hospital-italiano'
+        : null
+
+    if (!endpoint) {
+      setPlanillaError('Esta obra social no tiene plantilla configurada. Contactá al soporte de KLIA.')
+      return
+    }
+
     setGenerando(true)
     setPlanillaError(null)
     try {
-      const res = await fetch('/api/planillas/hospital-italiano', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paciente_id: paciente.id, mes: mes + 1, anio, os_config_id: paciente.os_config_id }),
-      })
-      if (!res.ok) throw new Error('Error al generar la planilla')
+      const res = await fetch(endpoint, { method: 'POST', headers, body })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        throw new Error(data.error ?? 'Error al generar la planilla')
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -1104,8 +1122,8 @@ function AsistenciaTab({ paciente, turnos, profObrasSociales = [] }: { paciente:
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
       setPlanillaOpen(false)
-    } catch {
-      setPlanillaError('No se pudo generar la planilla. Intentá de nuevo.')
+    } catch (err) {
+      setPlanillaError(err instanceof Error ? err.message : 'No se pudo generar la planilla. Intentá de nuevo.')
     } finally {
       setGenerando(false)
     }

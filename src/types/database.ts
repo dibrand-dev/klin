@@ -592,6 +592,40 @@ export type Database = {
           },
         ]
       }
+      planilla_templates: {
+        Row: {
+          id: string
+          nombre_os: string
+          slug: string
+          requiere_firma_olografa: boolean
+          aviso_firma: string | null
+          config: Record<string, unknown>
+          activa: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          nombre_os: string
+          slug: string
+          requiere_firma_olografa?: boolean
+          aviso_firma?: string | null
+          config: Record<string, unknown>
+          activa?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          nombre_os?: string
+          slug?: string
+          requiere_firma_olografa?: boolean
+          aviso_firma?: string | null
+          config?: Record<string, unknown>
+          activa?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profesional_obras_sociales: {
         Row: {
           id: string
@@ -606,6 +640,7 @@ export type Database = {
           descripcion_practica: string | null
           honorario_por_sesion: number | null
           activa: boolean
+          planilla_template_id: string | null
           created_at: string
           updated_at: string
         }
