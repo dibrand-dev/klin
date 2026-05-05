@@ -38,7 +38,7 @@ const COL_HDR = [
   'FIRMA Y SELLO\nDEL PROFESIONAL',
   'FIRMA Y ACLARACION\nDEL BENEF/PADRE/TUTOR',
 ]
-const ROW_H = 40
+const ROW_H = 65
 const HDR_H = 28
 
 // Colors
@@ -202,10 +202,14 @@ function drawRow(
   const drawSig = (url: string | undefined, colIdx: number) => {
     if (!url || !imgCache[url]) return
     const img = imgCache[url]!
-    const dims = imgScale(img, COL_W[colIdx] - 8, ROW_H - 6)
+    const sigMaxW = COL_W[colIdx] - 6
+    const sigMaxH = 58
+    const dims = imgScale(img, sigMaxW, sigMaxH)
+    const xCentered = COL_X[colIdx] + (COL_W[colIdx] - dims.width) / 2
+    const yOffset = (ROW_H - dims.height) / 2
     page.drawImage(img, {
-      x: COL_X[colIdx] + (COL_W[colIdx] - dims.width) / 2,
-      y: yb(kitY + (ROW_H - dims.height) / 2, dims.height),
+      x: xCentered,
+      y: yb(kitY + yOffset, dims.height),
       width: dims.width, height: dims.height,
     })
   }
@@ -292,11 +296,12 @@ function renderFirstPage(
 
   drawLabeledLine(page, fonts, L, FY + FH * 4, W, 'N° de autorizacion:', datos.numeroAutorizacion, true)
 
-  // Table
+  // Table — with ROW_H=65, max 9 rows fit on first page (593pt available after header)
+  const ROWS_P1 = 9
   const tableY = FY + FH * 5 + 8
   drawTableHeader(page, fonts, tableY)
   let rowY = tableY + HDR_H
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < ROWS_P1; i++) {
     drawRow(page, fonts, rowY, datos.sesiones[i] ?? null, imgCache)
     rowY += ROW_H
   }
@@ -308,9 +313,11 @@ function renderContinuationPage(
   sesiones: SesionPlanilla[],
   imgCache: Record<string, PDFImage | null>,
 ) {
+  // With ROW_H=65, max 11 rows fit on continuation pages (773pt available after header)
+  const ROWS_CONT = 11
   drawTableHeader(page, fonts, 40)
   let rowY = 40 + HDR_H
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < ROWS_CONT; i++) {
     drawRow(page, fonts, rowY, sesiones[i] ?? null, imgCache)
     rowY += ROW_H
   }
@@ -353,10 +360,10 @@ export async function generarPlanillaHospitalItaliano(datos: DatosPlanilla): Pro
   const page1 = pdfDoc.addPage([PAGE_W, PAGE_H])
   renderFirstPage(page1, fonts, datos, imgCache)
 
-  // Continuation pages (every 18 sessions after the first 12)
-  if (datos.sesiones.length > 12) {
+  // Continuation page if more than 9 sessions (first page capacity with ROW_H=65)
+  if (datos.sesiones.length > 9) {
     const page2 = pdfDoc.addPage([PAGE_W, PAGE_H])
-    renderContinuationPage(page2, fonts, datos.sesiones.slice(12), imgCache)
+    renderContinuationPage(page2, fonts, datos.sesiones.slice(9), imgCache)
   }
 
   return Buffer.from(await pdfDoc.save())
