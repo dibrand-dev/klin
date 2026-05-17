@@ -138,7 +138,6 @@ function SuscripcionPanel({ prestador, onClose, onSaved }: {
   async function handleGuardar() {
     if (!prestador) return
     setLoading(true)
-    const supabase = createClient()
     const updates: Record<string, unknown> = {
       plan,
       estado_cuenta: estado,
@@ -149,13 +148,19 @@ function SuscripcionPanel({ prestador, onClose, onSaved }: {
       updates.trial_inicio = null
       updates.trial_fin = null
     }
-    await supabase.from('profiles').update(updates).eq('id', prestador.id)
-    onSaved({
-      plan,
-      estado_cuenta: estado,
-      trial_fin: trialFin ? new Date(trialFin).toISOString() : prestador.trial_fin,
-      suscripcion_fin: suscripcionFin ? new Date(suscripcionFin).toISOString() : null,
+    const res = await fetch(`/api/ops/prestadores/${prestador.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
     })
+    if (res.ok) {
+      onSaved({
+        plan,
+        estado_cuenta: estado,
+        trial_fin: plan === 'bonificado' ? undefined : (trialFin ? new Date(trialFin).toISOString() : prestador.trial_fin ?? undefined),
+        suscripcion_fin: suscripcionFin ? new Date(suscripcionFin).toISOString() : null,
+      })
+    }
     setLoading(false)
     onClose()
   }
