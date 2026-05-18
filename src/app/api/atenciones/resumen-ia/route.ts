@@ -132,7 +132,8 @@ ${notasTexto || 'Sin notas clínicas previas'}
 
     return NextResponse.json({ summary, cached: false })
   } catch (err) {
-    console.error('Error Gemini:', err)
-    return NextResponse.json({ error: 'Error al generar resumen' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Error Gemini:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
