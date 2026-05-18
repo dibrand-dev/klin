@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
-const ReactMarkdown = dynamic(() => import('react-markdown'), { ssr: false })
 import Link from 'next/link'
+
+const ReactMarkdown = dynamic(() => import('react-markdown'), { ssr: false })
 
 type Props = {
   turnoId: string
@@ -15,6 +17,40 @@ type Props = {
   modalidad: string
   initialSummary: string | null
   onClose: () => void
+}
+
+const SECTION_STYLES = [
+  { icon: 'show_chart',   iconBg: 'bg-gray-100',   iconColor: 'text-gray-600',   cardBg: 'bg-white',       border: 'border-gray-100'   },
+  { icon: 'edit',         iconBg: 'bg-amber-50',   iconColor: 'text-amber-600',  cardBg: 'bg-white',       border: 'border-amber-100'  },
+  { icon: 'my_location',  iconBg: 'bg-purple-100', iconColor: 'text-purple-600', cardBg: 'bg-purple-50/50', border: 'border-purple-100' },
+]
+
+function parseSections(md: string) {
+  return md.split(/(?=^###\s)/m).filter(p => p.trim()).map(part => {
+    const lines = part.split('\n')
+    const header = lines[0].replace(/^###\s+/, '').trim()
+    const content = lines.slice(1).join('\n').trim()
+    return { header, content }
+  })
+}
+
+const MD_COMPONENTS = {
+  ul: ({ children }: { children: ReactNode }) => (
+    <ul className="space-y-2 mt-2">{children}</ul>
+  ),
+  li: ({ children }: { children: ReactNode }) => (
+    <li className="flex items-start gap-2 text-sm text-gray-700">
+      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0" />
+      <span>{children}</span>
+    </li>
+  ),
+  strong: ({ children }: { children: ReactNode }) => (
+    <strong className="font-semibold text-gray-900">{children}</strong>
+  ),
+  p: ({ children }: { children: ReactNode }) => (
+    <p className="text-sm text-gray-700">{children}</p>
+  ),
+  h3: () => null,
 }
 
 export default function ResumenIA({
@@ -33,9 +69,16 @@ export default function ResumenIA({
   const [cached, setCached] = useState(!!initialSummary)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (initialSummary) {
+      setSummary(initialSummary)
+      setCached(true)
+    }
+  }, [initialSummary])
+
   const initials = pacienteNombre
     .split(' ')
-    .map((w) => w[0])
+    .map(w => w[0])
     .slice(0, 2)
     .join('')
     .toUpperCase()
@@ -60,13 +103,12 @@ export default function ResumenIA({
     }
   }
 
+  const sections = summary ? parseSections(summary) : []
+
   return (
     <>
       {/* Scrim */}
-      <div
-        className="fixed inset-0 bg-black/30 z-40 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/30 z-40 transition-opacity" onClick={onClose} />
 
       {/* SlideOver */}
       <aside className="fixed top-0 right-0 bottom-0 w-[520px] max-w-full bg-white border-l border-gray-200 shadow-2xl z-50 flex flex-col">
@@ -101,7 +143,7 @@ export default function ResumenIA({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-3">
 
           {/* State 1 — not generated */}
           {!summary && !loading && (
@@ -120,9 +162,7 @@ export default function ResumenIA({
                 <p className="text-sm text-gray-600 leading-relaxed mb-4">
                   Generá un resumen con IA basado en el historial clínico, medicamentos actuales e interconsultas de este paciente.
                 </p>
-                {error && (
-                  <p className="text-xs text-red-600 mb-3">{error}</p>
-                )}
+                {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
                 <button
                   onClick={generarResumen}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm text-white"
@@ -132,7 +172,7 @@ export default function ResumenIA({
                   Generar Resumen Inteligente
                 </button>
               </div>
-              <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg flex gap-2.5 text-xs text-gray-500">
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex gap-2.5 text-xs text-gray-500">
                 <span className="material-symbols-outlined text-[14px] flex-none mt-0.5">info</span>
                 <span>El resumen se genera <strong>una sola vez por sesión</strong> y se guarda en la ficha. Usa el motor <strong>Gemini Fast</strong> para optimizar tiempo y costo.</span>
               </div>
@@ -142,33 +182,31 @@ export default function ResumenIA({
           {/* State 2 — loading */}
           {loading && (
             <>
-              <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 border border-indigo-100 mb-5 text-sm text-indigo-700">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-indigo-50 border border-indigo-100 text-sm text-indigo-700">
                 <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin flex-none" />
                 Analizando historial clínico, medicación y notas previas…
               </div>
-              {/* Skeleton */}
-              <div className="space-y-5">
-                {['Último estado clínico', 'Medicación e interconsultas', 'Foco sugerido para hoy'].map((sec) => (
-                  <div key={sec}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-2 h-2 rounded-full bg-gray-200 animate-pulse" />
-                      <div className="h-3.5 bg-gray-200 rounded animate-pulse w-40" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-3 bg-gray-100 rounded animate-pulse w-[90%]" />
-                      <div className="h-3 bg-gray-100 rounded animate-pulse w-[70%]" />
-                      <div className="h-3 bg-gray-100 rounded animate-pulse w-[80%]" />
-                    </div>
+              {SECTION_STYLES.map((s, i) => (
+                <div key={i} className={`rounded-xl border p-4 ${s.cardBg} ${s.border}`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className={`w-7 h-7 rounded-lg animate-pulse ${s.iconBg}`} />
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-36" />
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gray-100 rounded animate-pulse w-[90%]" />
+                    <div className="h-3 bg-gray-100 rounded animate-pulse w-[72%]" />
+                    <div className="h-3 bg-gray-100 rounded animate-pulse w-[81%]" />
+                  </div>
+                </div>
+              ))}
             </>
           )}
 
           {/* State 3 — generated */}
           {summary && !loading && (
             <>
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-xs text-green-700 font-medium mb-4">
+              {/* Status bar */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-xs text-green-700 font-medium">
                 <span className="material-symbols-outlined text-[14px]">check_circle</span>
                 {cached ? 'Resumen guardado · Costo $0' : 'Resumen generado · Gemini Fast'}
                 <button
@@ -179,10 +217,28 @@ export default function ResumenIA({
                   Regenerar
                 </button>
               </div>
-              <div className="prose prose-sm max-w-none text-gray-700 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-gray-900 [&_h3]:mt-5 [&_h3]:mb-2 [&_ul]:mt-1.5 [&_li]:my-1 [&_strong]:text-gray-900">
-                <ReactMarkdown>{summary}</ReactMarkdown>
-              </div>
-              <p className="mt-4 flex items-start gap-2 text-[11px] text-gray-400 border-t border-gray-100 pt-4">
+
+              {/* Section cards */}
+              {sections.map((section, i) => {
+                const s = SECTION_STYLES[i] ?? SECTION_STYLES[0]
+                return (
+                  <div key={i} className={`rounded-xl border p-4 ${s.cardBg} ${s.border}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className={`w-7 h-7 rounded-lg grid place-items-center flex-none ${s.iconBg}`}>
+                        <span className={`material-symbols-outlined text-[15px] ${s.iconColor}`}>{s.icon}</span>
+                      </div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                        {section.header.replace(/^[📌💊🎯]\s*/, '')}
+                      </span>
+                    </div>
+                    <ReactMarkdown components={MD_COMPONENTS as object}>
+                      {section.content}
+                    </ReactMarkdown>
+                  </div>
+                )
+              })}
+
+              <p className="flex items-start gap-2 text-[11px] text-gray-400 pt-1">
                 <span className="material-symbols-outlined text-[13px] mt-0.5">info</span>
                 El resumen es una herramienta de apoyo. La decisión clínica corresponde al profesional.
               </p>
@@ -190,7 +246,7 @@ export default function ResumenIA({
           )}
         </div>
 
-        {/* Footer — fixed */}
+        {/* Footer */}
         <div className="border-t border-gray-100 px-5 py-4 flex gap-3 bg-white">
           <Link
             href={`/pacientes/${pacienteId}`}
