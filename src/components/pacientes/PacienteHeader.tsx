@@ -52,8 +52,6 @@ export default function PacienteHeader({
     router.push('/pacientes')
   }
 
-  const motivo = paciente.motivo_consulta?.trim() || paciente.notas?.split('\n')[0]?.trim() || null
-
   const proximaSesionLabel = (() => {
     if (!summary.proximaSesion) return null
     const d = parseISO(summary.proximaSesion.fecha_hora)
@@ -183,12 +181,7 @@ export default function PacienteHeader({
       </div>
 
       {/* Summary tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <SummaryTile
-          label="MOTIVO"
-          value={motivo || '—'}
-          className="text-primary"
-        />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
         <SummaryTile
           label="INICIO TRATAMIENTO"
           value={summary.tratamientoDesde
