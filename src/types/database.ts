@@ -228,6 +228,8 @@ export type Database = {
           recordatorio_enviado: boolean
           serie_recurrente_id: string | null
           google_event_id: string | null
+          ai_summary: string | null
+          estado_atencion: 'en_espera' | 'en_consultorio' | 'atendido' | 'ausente' | null
           created_at: string
           updated_at: string
         }
@@ -247,6 +249,8 @@ export type Database = {
           recordatorio_enviado?: boolean
           serie_recurrente_id?: string | null
           google_event_id?: string | null
+          ai_summary?: string | null
+          estado_atencion?: 'en_espera' | 'en_consultorio' | 'atendido' | 'ausente' | null
           created_at?: string
           updated_at?: string
         }
@@ -261,6 +265,8 @@ export type Database = {
           monto?: number | null
           moneda?: string
           notas?: string | null
+          ai_summary?: string | null
+          estado_atencion?: 'en_espera' | 'en_consultorio' | 'atendido' | 'ausente' | null
           pagado?: boolean
           motivo_cancelacion?: string | null
           recordatorio_enviado?: boolean

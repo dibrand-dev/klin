@@ -10,6 +10,7 @@ import Logo from '@/components/ui/Logo'
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { href: '/agenda', label: 'Agenda', icon: 'calendar_today' },
+  { href: '/atenciones', label: 'Atenciones', icon: 'medical_services' },
   { href: '/pacientes', label: 'Pacientes', icon: 'groups' },
   {
     href: '/facturacion/liquidacion', label: 'Facturación', icon: 'payments',
