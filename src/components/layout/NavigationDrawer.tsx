@@ -3,30 +3,46 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile } from '@/types/database'
+import type { Profile, ModuloConfig } from '@/types/database'
 import SidebarUserCard from '@/components/ui/SidebarUserCard'
 import Logo from '@/components/ui/Logo'
+import { puedeAcceder } from '@/lib/modulos'
 
-const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { href: '/agenda', label: 'Agenda', icon: 'calendar_today' },
-  { href: '/atenciones', label: 'Atenciones', icon: 'medical_services' },
-  { href: '/pacientes', label: 'Pacientes', icon: 'groups' },
-  {
-    href: '/facturacion/liquidacion', label: 'Facturación', icon: 'payments',
-    children: [{ href: '/facturacion/liquidacion', label: 'Liquidación OS' }],
-  },
-  { href: '/informes', label: 'Informes', icon: 'description' },
-  { href: '/ajustes', label: 'Ajustes', icon: 'settings' },
+// Items that always show (not controlled by modulos_config)
+const ALWAYS_ITEMS = [
+  { href: '/dashboard', label: 'Dashboard', icon: 'dashboard', moduloId: null },
+  { href: '/ajustes', label: 'Ajustes', icon: 'settings', moduloId: null },
 ]
 
-export default function NavigationDrawer({ profile, onNuevaSesion, mobileOpen = false, onClose }: {
+// Items controlled by modulos_config
+const MODULE_ITEMS = [
+  { href: '/agenda', label: 'Agenda', icon: 'calendar_today', moduloId: 'agenda',
+    children: [] as { href: string; label: string }[] },
+  { href: '/atenciones', label: 'Atenciones', icon: 'medical_services', moduloId: 'atenciones',
+    children: [] },
+  { href: '/pacientes', label: 'Pacientes', icon: 'groups', moduloId: 'pacientes',
+    children: [] },
+  { href: '/facturacion/liquidacion', label: 'Facturación', icon: 'payments', moduloId: 'facturacion',
+    children: [{ href: '/facturacion/liquidacion', label: 'Liquidación OS' }] },
+  { href: '/informes', label: 'Informes', icon: 'description', moduloId: 'informes',
+    children: [] },
+]
+
+export default function NavigationDrawer({
+  profile,
+  modulos,
+  onNuevaSesion,
+  mobileOpen = false,
+  onClose,
+}: {
   profile: Profile | null
+  modulos: ModuloConfig[]
   onNuevaSesion: () => void
   mobileOpen?: boolean
   onClose?: () => void
 }) {
   const pathname = usePathname()
+  const plan = profile?.plan ?? ''
 
   async function handleLogout() {
     const supabase = createClient()
@@ -37,6 +53,12 @@ export default function NavigationDrawer({ profile, onNuevaSesion, mobileOpen = 
   const initials = profile
     ? `${profile.nombre?.[0] ?? ''}${profile.apellido?.[0] ?? ''}`.toUpperCase()
     : 'U'
+
+  const navItems = [
+    ALWAYS_ITEMS[0], // Dashboard
+    ...MODULE_ITEMS.filter(item => puedeAcceder(item.moduloId, plan, modulos)),
+    ALWAYS_ITEMS[1], // Ajustes
+  ]
 
   return (
     <nav
@@ -58,8 +80,12 @@ export default function NavigationDrawer({ profile, onNuevaSesion, mobileOpen = 
 
       {/* Navigation Menu */}
       <ul className="flex flex-col gap-2 flex-1">
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href.split('/')[1] ? '/' + item.href.split('/')[1] : item.href)
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || (
+            item.href !== '/dashboard' &&
+            pathname.startsWith('/' + item.href.split('/')[1])
+          )
+          const children = 'children' in item ? item.children : []
           return (
             <li key={item.href}>
               <Link
@@ -80,9 +106,9 @@ export default function NavigationDrawer({ profile, onNuevaSesion, mobileOpen = 
                 </span>
                 <span className="text-sm">{item.label}</span>
               </Link>
-              {'children' in item && item.children && isActive && (
+              {children.length > 0 && isActive && (
                 <ul className="ml-10 mt-1 space-y-1">
-                  {item.children.map(child => (
+                  {children.map(child => (
                     <li key={child.href}>
                       <Link
                         href={child.href}

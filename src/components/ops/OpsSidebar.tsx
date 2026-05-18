@@ -18,6 +18,7 @@ const NAV_ITEMS = [
 
 const NAV_ITEMS_TOTAL = [
   { href: '/ops/planes', label: 'Planes', icon: 'workspace_premium' },
+  { href: '/ops/modulos', label: 'Módulos', icon: 'extension' },
   { href: '/ops/configuracion', label: 'Configuración', icon: 'settings' },
 ]
 

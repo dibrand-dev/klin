@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AtencionesClient from '@/components/atenciones/AtencionesClient'
+import { getModulosConfig, puedeAcceder } from '@/lib/modulos'
 
 export const metadata = { title: 'Atenciones del Día — KLIA' }
 
@@ -8,6 +9,15 @@ export default async function AtencionesPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const [{ data: profile }, modulos] = await Promise.all([
+    supabase.from('profiles').select('plan').eq('id', user.id).single(),
+    getModulosConfig(supabase),
+  ])
+
+  if (!puedeAcceder('atenciones', profile?.plan ?? '', modulos)) {
+    redirect('/planes')
+  }
 
   // Argentina UTC-3
   const ahora = new Date()

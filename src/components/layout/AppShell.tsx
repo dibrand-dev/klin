@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, Paciente } from '@/types/database'
+import type { Profile, Paciente, ModuloConfig } from '@/types/database'
 import GlobalFooter from './GlobalFooter'
 import NavigationDrawer from './NavigationDrawer'
 import SlideOver from '@/components/ui/SlideOver'
@@ -36,9 +36,11 @@ function TrialBanner({ trialFin }: { trialFin: string }) {
 
 export default function AppShell({
   profile,
+  modulos,
   children,
 }: {
   profile: Profile | null
+  modulos: ModuloConfig[]
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -122,7 +124,7 @@ export default function AppShell({
       )}
 
       {/* Navigation Drawer */}
-      <NavigationDrawer profile={profile} onNuevaSesion={abrirNuevoTurno} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <NavigationDrawer profile={profile} modulos={modulos} onNuevaSesion={abrirNuevoTurno} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       {/* Main content */}
       <main

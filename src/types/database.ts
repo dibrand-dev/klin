@@ -962,6 +962,15 @@ export type Configuracion = Database['public']['Tables']['configuracion']['Row']
 export type TurnoRecurrente = Database['public']['Tables']['turnos_recurrentes']['Row']
 export type ObraSocial = Database['public']['Tables']['obras_sociales']['Row']
 export type Plan = Database['public']['Tables']['planes']['Row']
+export type ModuloConfig = {
+  modulo_id: string
+  nombre: string
+  descripcion: string | null
+  icono: string
+  ruta: string
+  planes: string[]
+  activo: boolean
+}
 export type PlanFuncionalidad = Database['public']['Tables']['plan_funcionalidades']['Row']
 export type ProfesionalObraSocial = Database['public']['Tables']['profesional_obras_sociales']['Row']
 export type OsHonorariosHistorial = Database['public']['Tables']['os_honorarios_historial']['Row']
