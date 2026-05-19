@@ -62,6 +62,20 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Redirect blocked accounts to the paused-access page (page routes only)
+  if (user && !isAuthRoute && !pathname.startsWith('/cuenta-bloqueada') && !pathname.startsWith('/api/') && !pathname.startsWith('/ops/')) {
+    const { data: profileStatus } = await supabase
+      .from('profiles')
+      .select('estado_cuenta')
+      .eq('id', user.id)
+      .single()
+    if (profileStatus?.estado_cuenta === 'bloqueada') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/cuenta-bloqueada'
+      return NextResponse.redirect(url)
+    }
+  }
+
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
