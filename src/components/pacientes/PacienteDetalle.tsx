@@ -784,6 +784,8 @@ export default function PacienteDetalle({
 function ResumenTab({ paciente, medicaciones }: { paciente: Paciente; medicaciones: MedicacionPaciente[] }) {
   const evolucion = paciente.notas || null
   const motivo = paciente.motivo_consulta || null
+  const [motivoExpanded, setMotivoExpanded] = useState(false)
+  const [evolucionExpanded, setEvolucionExpanded] = useState(false)
 
   return (
     <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -793,9 +795,19 @@ function ResumenTab({ paciente, medicaciones }: { paciente: Paciente; medicacion
             Motivo de Consulta
           </h3>
           {motivo ? (
-            <p className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap">
-              {motivo}
-            </p>
+            <div>
+              <p className={`text-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap ${!motivoExpanded ? 'line-clamp-3' : ''}`}>
+                {motivo}
+              </p>
+              {motivo.length > 150 && (
+                <button
+                  onClick={() => setMotivoExpanded(!motivoExpanded)}
+                  className="text-xs text-primary font-medium mt-2 hover:underline"
+                >
+                  {motivoExpanded ? 'Ver menos ↑' : 'Seguir leyendo ↓'}
+                </button>
+              )}
+            </div>
           ) : (
             <p className="text-sm text-on-surface-variant">Sin datos registrados.</p>
           )}
@@ -805,9 +817,19 @@ function ResumenTab({ paciente, medicaciones }: { paciente: Paciente; medicacion
             Evolución del tratamiento
           </h3>
           {evolucion ? (
-            <p className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap">
-              {evolucion}
-            </p>
+            <div>
+              <p className={`text-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap ${!evolucionExpanded ? 'line-clamp-3' : ''}`}>
+                {evolucion}
+              </p>
+              {evolucion.length > 150 && (
+                <button
+                  onClick={() => setEvolucionExpanded(!evolucionExpanded)}
+                  className="text-xs text-primary font-medium mt-2 hover:underline"
+                >
+                  {evolucionExpanded ? 'Ver menos ↑' : 'Seguir leyendo ↓'}
+                </button>
+              )}
+            </div>
           ) : (
             <p className="text-sm text-on-surface-variant">Sin datos registrados.</p>
           )}
