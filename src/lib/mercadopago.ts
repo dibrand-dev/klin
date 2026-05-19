@@ -1,7 +1,6 @@
 import { MercadoPagoConfig, PreApprovalPlan, PreApproval } from 'mercadopago'
 
-const isProduction =
-  process.env.NODE_ENV === 'production' && process.env.MP_USE_PRODUCTION === 'true'
+const isProduction = process.env.MP_USE_PRODUCTION === 'true'
 
 export const mpClient = new MercadoPagoConfig({
   accessToken: isProduction
