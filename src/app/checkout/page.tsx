@@ -25,10 +25,7 @@ export default function CheckoutPage({
 
   if (!preferenceId || !plan || !monto) redirect('/planes')
 
-  const isProduction = process.env.MP_USE_PRODUCTION === 'true'
-  const mpPublicKey = isProduction
-    ? (process.env.MP_PUBLIC_KEY_PROD ?? '')
-    : (process.env.MP_PUBLIC_KEY_TEST ?? '')
+  const mpPublicKey = process.env.MP_PUBLIC_KEY_PROD ?? ''
 
   const planNombre = PLAN_NOMBRES[plan] ?? plan
 
