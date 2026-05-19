@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,7 @@ const labelCls =
 
 export default function PerfilProfesional({ profile }: { profile: Profile | null }) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
     especialidad: profile?.especialidad ?? '',
     matricula: profile?.matricula ?? '',
@@ -23,10 +24,64 @@ export default function PerfilProfesional({ profile }: { profile: Profile | null
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url ?? null)
+  const [uploading, setUploading] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
     setSaved(false)
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !profile?.id) return
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError('La imagen no puede superar 2MB')
+      return
+    }
+
+    setUploading(true)
+    setError(null)
+    const supabase = createClient()
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const path = `${profile.id}/avatar.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true })
+
+    if (uploadError) {
+      setError('Error al subir la imagen. Intentá de nuevo.')
+      setUploading(false)
+      return
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+
+    await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', profile.id)
+
+    setAvatarUrl(publicUrl)
+    setUploading(false)
+    router.refresh()
+
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  async function handleDeleteAvatar() {
+    if (!profile?.id || !avatarUrl) return
+    setUploading(true)
+    const supabase = createClient()
+
+    const path = avatarUrl.split('/object/public/avatars/')[1]
+    if (path) await supabase.storage.from('avatars').remove([path])
+
+    await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id)
+
+    setAvatarUrl(null)
+    setUploading(false)
+    router.refresh()
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -55,12 +110,57 @@ export default function PerfilProfesional({ profile }: { profile: Profile | null
     router.refresh()
   }
 
+  const initials = `${profile?.nombre?.[0] ?? ''}${profile?.apellido?.[0] ?? ''}`.toUpperCase()
+
   return (
     <div className="bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_24px_rgba(0,26,72,0.06)]">
       <h2 className="font-semibold text-on-surface mb-5 flex items-center gap-2 text-sm">
         <span className="material-symbols-outlined text-primary text-[20px]">badge</span>
         Perfil profesional
       </h2>
+
+      {/* Avatar uploader */}
+      <div className="flex items-center gap-5 mb-6 p-4 bg-surface-container-high/40 rounded-lg border border-outline-variant/10">
+        <div className="relative shrink-0">
+          <div className="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center font-bold text-2xl overflow-hidden border-2 border-outline-variant/20">
+            {avatarUrl
+              /* eslint-disable-next-line @next/next/no-img-element */
+              ? <img src={avatarUrl} alt={initials} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              : initials}
+          </div>
+          <label className={cn(
+            'absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-md border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors',
+            uploading && 'opacity-50 pointer-events-none'
+          )}>
+            {uploading
+              ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin block" />
+              : <span className="material-symbols-outlined text-gray-600 block" style={{ fontSize: 16 }}>photo_camera</span>
+            }
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleAvatarUpload}
+              disabled={uploading}
+            />
+          </label>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-on-surface">{profile?.nombre} {profile?.apellido}</p>
+          <p className="text-xs text-on-surface-variant mt-0.5">JPG, PNG o WebP · Máx 2MB</p>
+          {avatarUrl && (
+            <button
+              type="button"
+              onClick={handleDeleteAvatar}
+              disabled={uploading}
+              className="text-xs text-red-500 hover:text-red-700 mt-1.5 transition-colors disabled:opacity-50"
+            >
+              Eliminar foto
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Datos de identidad (solo lectura) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 p-4 bg-surface-container-high/40 rounded-lg border border-outline-variant/10">
