@@ -9,21 +9,23 @@ import type { NotaClinica, TurnoRow } from '@/types/database'
 import SlideOver from '@/components/ui/SlideOver'
 import NotaDetalleEditor from './NotaDetalleEditor'
 
-function limpiarMarkdown(texto: string): string {
+function stripHtmlAndMarkdown(texto: string): string {
   return texto
+    .replace(/<[^>]*>/g, ' ')   // strip HTML tags
     .replace(/\*\*(.*?)\*\*/g, '$1')
     .replace(/\*(.*?)\*/g, '$1')
     .replace(/#{1,6}\s/g, '')
     .replace(/\[completar\]/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
 }
 
 function previewContenido(texto: string): string {
-  return limpiarMarkdown(texto.split('\n').filter((l) => l.trim()).join(' '))
+  return stripHtmlAndMarkdown(texto)
 }
 
 function extraerTags(texto: string): string[] {
-  const clean = limpiarMarkdown(texto)
+  const clean = stripHtmlAndMarkdown(texto)
   const matches = clean.match(/#[a-zA-Z0-9_-]+/g)
   if (!matches) return []
   return Array.from(new Set(matches.map((t) => t.slice(1).toLowerCase()))).slice(0, 4)
@@ -228,10 +230,14 @@ export default function HistorialList({ notas, turnos, pacienteId }: Props) {
                         className="md:w-48 p-6 bg-surface-container-lowest flex flex-col justify-end gap-2 border-t md:border-t-0 md:border-l border-outline-variant/10"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <span className="flex items-center justify-center gap-2 w-full py-2.5 md:py-2 bg-primary-fixed/30 group-hover:bg-primary-fixed text-primary font-bold text-[11px] rounded-lg transition-colors uppercase tracking-wider">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedNota(nota)}
+                          className="flex items-center justify-center gap-2 w-full py-2.5 md:py-2 bg-primary-fixed/30 group-hover:bg-primary-fixed text-primary font-bold text-[11px] rounded-lg transition-colors uppercase tracking-wider"
+                        >
                           <span className="material-symbols-outlined text-sm">visibility</span>
                           Ver nota completa
-                        </span>
+                        </button>
 
                         {confirmDeleteId === nota.id ? (
                           <div className="flex gap-1.5">

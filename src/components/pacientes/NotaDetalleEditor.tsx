@@ -7,17 +7,29 @@ import { es } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { NotaClinica } from '@/types/database'
+import RichTextEditor from '@/components/ui/RichTextEditor'
 
-function limpiarMarkdown(texto: string): string {
-  return texto
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/\*(.*?)\*/g, '$1')
-    .replace(/#{1,6}\s/g, '')
-    .replace(/\[completar\]/g, '')
-    .trim()
+function isHtmlEmpty(html: string): boolean {
+  return !html.replace(/<[^>]*>/g, '').trim()
 }
 
-export default function NotaDetalleEditor({ nota, pacienteId, onSaved, onDeleted }: { nota: NotaClinica; pacienteId: string; onSaved?: () => void; onDeleted?: () => void }) {
+// Renders plain text or HTML content safely
+function renderContenido(contenido: string) {
+  const isHtml = contenido.trim().startsWith('<')
+  if (isHtml) {
+    return (
+      <div
+        className="prose prose-sm max-w-none text-gray-800 leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: contenido }}
+      />
+    )
+  }
+  return (
+    <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{contenido}</p>
+  )
+}
+
+export default function NotaDetalleEditor({ nota, pacienteId: _pacienteId, onSaved, onDeleted }: { nota: NotaClinica; pacienteId: string; onSaved?: () => void; onDeleted?: () => void }) {
   const router = useRouter()
   const [editando, setEditando] = useState(false)
   const [contenido, setContenido] = useState(nota.contenido)
@@ -39,13 +51,13 @@ export default function NotaDetalleEditor({ nota, pacienteId, onSaved, onDeleted
   }
 
   async function handleGuardar() {
-    if (!contenido.trim()) return
+    if (isHtmlEmpty(contenido)) return
     setLoading(true)
     setError(null)
     const supabase = createClient()
     const { error: dbError } = await supabase
       .from('notas_clinicas')
-      .update({ contenido: contenido.trim() })
+      .update({ contenido })
       .eq('id', nota.id)
     if (dbError) { setError('Error al guardar. Intentá de nuevo.'); setLoading(false); return }
     setEditando(false)
@@ -65,12 +77,10 @@ export default function NotaDetalleEditor({ nota, pacienteId, onSaved, onDeleted
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">{error}</div>
           )}
-          <textarea
+          <RichTextEditor
             value={contenido}
-            onChange={(e) => setContenido(e.target.value)}
-            rows={12}
-            className="input-field resize-none"
-            autoFocus
+            onChange={setContenido}
+            minHeight="240px"
           />
           <div className="flex gap-3">
             <button
@@ -81,8 +91,8 @@ export default function NotaDetalleEditor({ nota, pacienteId, onSaved, onDeleted
             </button>
             <button
               onClick={handleGuardar}
-              disabled={loading || !contenido.trim()}
-              className={cn('btn-primary flex-1 py-3', (loading || !contenido.trim()) && 'opacity-50')}
+              disabled={loading || isHtmlEmpty(contenido)}
+              className={cn('btn-primary flex-1 py-3', (loading || isHtmlEmpty(contenido)) && 'opacity-50')}
             >
               {loading ? 'Guardando...' : 'Guardar cambios'}
             </button>
@@ -90,7 +100,7 @@ export default function NotaDetalleEditor({ nota, pacienteId, onSaved, onDeleted
         </>
       ) : (
         <>
-          <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">{limpiarMarkdown(contenido)}</p>
+          {renderContenido(contenido)}
           <div className="flex items-center justify-between pt-2">
             <button
               onClick={() => setEditando(true)}
