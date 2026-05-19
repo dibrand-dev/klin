@@ -11,6 +11,10 @@ export type Database = {
           especialidad: string | null
           telefono: string | null
           domicilio: string | null
+          direccion: string | null
+          provincia: string | null
+          localidad: string | null
+          pais: string | null
           firma_url: string | null
           firma_sello_url: string | null
           avatar_url: string | null
@@ -37,6 +41,10 @@ export type Database = {
           matricula?: string | null
           especialidad?: string | null
           telefono?: string | null
+          direccion?: string | null
+          provincia?: string | null
+          localidad?: string | null
+          pais?: string | null
           avatar_url?: string | null
           plan?: 'esencial' | 'profesional' | 'premium' | 'bonificado'
           estado_cuenta?: 'trial' | 'activa' | 'bloqueada' | 'cancelada'
@@ -61,6 +69,10 @@ export type Database = {
           matricula?: string | null
           especialidad?: string | null
           telefono?: string | null
+          direccion?: string | null
+          provincia?: string | null
+          localidad?: string | null
+          pais?: string | null
           avatar_url?: string | null
           plan?: 'esencial' | 'profesional' | 'premium' | 'bonificado'
           estado_cuenta?: 'trial' | 'activa' | 'bloqueada' | 'cancelada'

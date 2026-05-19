@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { Profile } from '@/types/database'
 import { ESPECIALIDADES } from '@/lib/especialidades'
+import { PAISES, PAISES_PROVINCIAS } from '@/lib/geografica'
 
 const inputCls =
   'w-full bg-surface-container-high border border-outline-variant/15 text-on-surface rounded-lg px-4 py-3 text-sm focus:bg-surface-container-lowest focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none'
@@ -19,7 +20,10 @@ export default function PerfilProfesional({ profile }: { profile: Profile | null
     especialidad: profile?.especialidad ?? '',
     matricula: profile?.matricula ?? '',
     telefono: profile?.telefono ?? '',
-    domicilio: profile?.domicilio ?? '',
+    pais: profile?.pais ?? 'Argentina',
+    provincia: profile?.provincia ?? '',
+    localidad: profile?.localidad ?? '',
+    direccion: profile?.direccion ?? '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,7 +32,11 @@ export default function PerfilProfesional({ profile }: { profile: Profile | null
   const [uploading, setUploading] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    setForm((prev) => {
+      if (name === 'pais') return { ...prev, pais: value, provincia: '', localidad: '' }
+      return { ...prev, [name]: value }
+    })
     setSaved(false)
   }
 
@@ -96,7 +104,10 @@ export default function PerfilProfesional({ profile }: { profile: Profile | null
         especialidad: form.especialidad || null,
         matricula: form.matricula || null,
         telefono: form.telefono || null,
-        domicilio: form.domicilio || null,
+        pais: form.pais || null,
+        provincia: form.provincia || null,
+        localidad: form.localidad || null,
+        direccion: form.direccion || null,
       })
       .eq('id', profile?.id ?? '')
 
@@ -233,21 +244,64 @@ export default function PerfilProfesional({ profile }: { profile: Profile | null
           </div>
         </div>
 
-        <div>
-          <label htmlFor="domicilio" className={labelCls}>Domicilio donde realiza la prestación</label>
-          <input
-            id="domicilio"
-            name="domicilio"
-            type="text"
-            value={form.domicilio}
-            onChange={handleChange}
-            placeholder="Av. Corrientes 1234, CABA"
-            className={inputCls}
-          />
-          <p className="text-[11px] text-on-surface-variant mt-1.5">
-            Se usa en las planillas de asistencia para obras sociales.
-          </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label htmlFor="pais" className={labelCls}>País</label>
+            <select
+              id="pais"
+              name="pais"
+              value={form.pais}
+              onChange={handleChange}
+              className={inputCls}
+            >
+              {PAISES.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="provincia" className={labelCls}>Provincia / Estado</label>
+            <select
+              id="provincia"
+              name="provincia"
+              value={form.provincia}
+              onChange={handleChange}
+              className={inputCls}
+            >
+              <option value="">Sin especificar</option>
+              {(PAISES_PROVINCIAS[form.pais] ?? []).map((prov) => (
+                <option key={prov} value={prov}>{prov}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="localidad" className={labelCls}>Localidad / Ciudad</label>
+            <input
+              id="localidad"
+              name="localidad"
+              type="text"
+              value={form.localidad}
+              onChange={handleChange}
+              placeholder="Ej: Buenos Aires"
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label htmlFor="direccion" className={labelCls}>Dirección donde realiza la prestación</label>
+            <input
+              id="direccion"
+              name="direccion"
+              type="text"
+              value={form.direccion}
+              onChange={handleChange}
+              placeholder="Av. Corrientes 1234, Piso 3"
+              className={inputCls}
+            />
+          </div>
         </div>
+        <p className="text-[11px] text-on-surface-variant -mt-2">
+          Se usa en las planillas de asistencia para obras sociales.
+        </p>
 
         <div className="flex justify-end pt-2">
           <button
